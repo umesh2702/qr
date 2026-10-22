@@ -18,9 +18,9 @@ import {
   ShieldCheck,
   AlertTriangle,
   Printer,
-  Image as ImageIcon,
   CheckCircle2,
   X,
+  Upload,
 } from "lucide-react";
 import {
   QRType,
@@ -52,32 +52,31 @@ const QR_TYPE_CONFIG: {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
 }[] = [
-  { id: "url", label: "Website URL", shortLabel: "URL", icon: Globe, description: "Direct link to any website, menu, or landing page." },
-  { id: "wifi", label: "Wi-Fi Network", shortLabel: "Wi-Fi", icon: Wifi, description: "Connect smartphones to guest Wi-Fi without typing passwords." },
-  { id: "vcard", label: "Contact (vCard)", shortLabel: "vCard", icon: UserCheck, description: "Digital business card that adds contacts to phone address books." },
-  { id: "whatsapp", label: "WhatsApp Chat", shortLabel: "WhatsApp", icon: MessageSquare, description: "Start a direct WhatsApp conversation with optional prefilled text." },
-  { id: "text", label: "Plain Text", shortLabel: "Text", icon: FileText, description: "Display unformatted plain text, serial numbers, or notes." },
-  { id: "email", label: "Send Email", shortLabel: "Email", icon: Mail, description: "Prefilled email with recipient address, subject, and message." },
-  { id: "phone", label: "Phone Call", shortLabel: "Phone", icon: Phone, description: "Dial a telephone number directly on mobile devices." },
-  { id: "sms", label: "SMS Message", shortLabel: "SMS", icon: MessageCircle, description: "Send a prefilled text message to any phone number." },
+  { id: "url", label: "Website URL", shortLabel: "URL", icon: Globe, description: "Direct link to any website, menu, or web page without third-party redirects." },
+  { id: "wifi", label: "Wi-Fi Network", shortLabel: "Wi-Fi", icon: Wifi, description: "Connect smartphones directly to Wi-Fi without manually typing passwords." },
+  { id: "vcard", label: "Contact (vCard)", shortLabel: "vCard", icon: UserCheck, description: "Digital business card that pre-populates smartphone address books." },
+  { id: "whatsapp", label: "WhatsApp Chat", shortLabel: "WhatsApp", icon: MessageSquare, description: "Open a direct WhatsApp conversation with optional prefilled message." },
+  { id: "text", label: "Plain Text", shortLabel: "Text", icon: FileText, description: "Display unformatted plain text, notes, or serial numbers." },
+  { id: "email", label: "Send Email", shortLabel: "Email", icon: Mail, description: "Pre-composed email with recipient, subject line, and body." },
+  { id: "phone", label: "Phone Call", shortLabel: "Phone", icon: Phone, description: "Direct telephone dialer link for mobile devices." },
+  { id: "sms", label: "SMS Message", shortLabel: "SMS", icon: MessageCircle, description: "Send a prefilled text message to any mobile phone." },
   { id: "geo", label: "Location / Map", shortLabel: "Location", icon: MapPin, description: "Pinpoint latitude and longitude on Google Maps." },
-  { id: "event", label: "Calendar Event", shortLabel: "Event", icon: Calendar, description: "iCalendar event invitation with start/end time and location." },
+  { id: "event", label: "Calendar Event", shortLabel: "Event", icon: Calendar, description: "iCalendar invitation with start and end times, description, and location." },
 ];
 
 const COLOR_PRESETS = [
-  { id: "classic", name: "Classic Black", fg: "#000000", bg: "#ffffff" },
-  { id: "midnight", name: "Midnight Slate", fg: "#0f172a", bg: "#f8fafc" },
+  { id: "classic", name: "Classic Noir", fg: "#000000", bg: "#ffffff" },
+  { id: "midnight", name: "Slate Minimal", fg: "#0f172a", bg: "#f8fafc" },
   { id: "indigo", name: "Deep Indigo", fg: "#312e81", bg: "#eef2ff" },
-  { id: "emerald", name: "Forest Emerald", fg: "#064e3b", bg: "#f0fdf4" },
+  { id: "emerald", name: "Forest Green", fg: "#064e3b", bg: "#f0fdf4" },
   { id: "ruby", name: "Wine Ruby", fg: "#881337", bg: "#fff1f2" },
-  { id: "purple", name: "Royal Purple", fg: "#581c87", bg: "#faf5ff" },
   { id: "teal", name: "Cyber Teal", fg: "#164e63", bg: "#ecfeff" },
 ];
 
 export const QRWorkspace: React.FC = () => {
   const [activeType, setActiveType] = useState<QRType>("url");
 
-  // Form states initialized with realistic initial defaults
+  // Form states with clean initial defaults
   const [formData, setFormData] = useState<QRFormDataMap>({
     url: { url: "https://ucreates.io" },
     text: { text: "Scan and explore UCode by UCreates." },
@@ -87,7 +86,7 @@ export const QRWorkspace: React.FC = () => {
       firstName: "Alex",
       lastName: "Morgan",
       organization: "UCreates Digital",
-      title: "Lead Digital Solutions Architect",
+      title: "Lead Solutions Architect",
       phone: "+1 (555) 019-2834",
       email: "alex@ucreates.io",
       url: "https://ucreates.io",
@@ -100,7 +99,7 @@ export const QRWorkspace: React.FC = () => {
     geo: { latitude: "37.7749", longitude: "-122.4194", query: "San Francisco, CA" },
     event: {
       title: "UCode Product Showcase",
-      location: "Virtual & In-Person, SF",
+      location: "San Francisco, CA",
       description: "Live demonstration of privacy-first QR engineering.",
       startDate: "2026-11-20T10:00",
       endDate: "2026-11-20T12:00",
@@ -117,9 +116,13 @@ export const QRWorkspace: React.FC = () => {
     size: 512,
     logo: null,
     logoSize: 22,
+    logoPadding: 12,
+    logoRadius: 20,
   });
 
-  const [activeTab, setActiveTab] = useState<"colors" | "options" | "logo">("colors");
+  // Reorganized customization group: "appearance" | "precision" | "logo"
+  const [customSection, setCustomSection] = useState<"appearance" | "precision" | "logo">("appearance");
+
   const [exportResolution, setExportResolution] = useState<number>(2048);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -127,6 +130,7 @@ export const QRWorkspace: React.FC = () => {
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; decodedPayload: string | null } | null>(null);
+  const [viewingDistance, setViewingDistance] = useState<number>(1);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -140,7 +144,6 @@ export const QRWorkspace: React.FC = () => {
   const updateCanvas = useCallback(async () => {
     if (!canvasRef.current) return;
     if (!payload || !validation.isValid) {
-      // Clear canvas if payload is invalid
       const ctx = canvasRef.current.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       return;
@@ -157,12 +160,10 @@ export const QRWorkspace: React.FC = () => {
     updateCanvas();
   }, [updateCanvas]);
 
-  // Track generator opened once
   useEffect(() => {
     analytics.track("generator_opened");
   }, []);
 
-  // Listen for Escape key to close diagnostic modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isTestModalOpen) {
@@ -267,7 +268,7 @@ export const QRWorkspace: React.FC = () => {
       const svgString = await generateQRSVG(payload, customization);
       const filename = `ucode-${activeType}-vector.svg`;
       triggerSVGDownload(svgString, filename);
-      setDownloadSuccess("Downloaded Pure Vector SVG!");
+      setDownloadSuccess("Downloaded Scalable Vector SVG!");
       setTimeout(() => setDownloadSuccess(null), 3500);
 
       analytics.track("qr_download_completed", {
@@ -281,24 +282,23 @@ export const QRWorkspace: React.FC = () => {
 
   const handleCopyImage = async () => {
     if (!canvasRef.current) return;
-    setCopyError(null);
+
     try {
       canvasRef.current.toBlob(async (blob) => {
         if (!blob) return;
-        try {
+        if (navigator.clipboard && window.ClipboardItem) {
           const item = new ClipboardItem({ "image/png": blob });
           await navigator.clipboard.write([item]);
           setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        } catch (clipErr) {
-          console.warn("Clipboard write failed:", clipErr);
-          setCopyError("Clipboard permission denied or unsupported. Please use Download PNG.");
+          setTimeout(() => setCopied(false), 2500);
+        } else {
+          setCopyError("Clipboard copy is not supported in this browser. Please use Download PNG.");
           setTimeout(() => setCopyError(null), 4000);
         }
       });
     } catch (err) {
-      console.warn("Clipboard copy not supported or permitted:", err);
-      setCopyError("Unable to copy image in this browser. Please use Download PNG.");
+      console.warn("Clipboard copy not permitted:", err);
+      setCopyError("Unable to copy image. Please use Download PNG.");
       setTimeout(() => setCopyError(null), 4000);
     }
   };
@@ -311,27 +311,25 @@ export const QRWorkspace: React.FC = () => {
     analytics.track("scannability_diagnostics_viewed", { qrType: activeType });
   };
 
+  const printSize = calculatePrintSize(viewingDistance);
+
   return (
     <div id="generator" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-      {/* Section Header */}
-      <div className="text-center max-w-3xl mx-auto mb-8 md:mb-12">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 mb-4">
-          <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-          <span>Direct Client-Side Encoding • Never Expires • No Signup</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Create. Customize. Scan. Done.
+      {/* Quiet, refined section header */}
+      <div className="max-w-2xl mx-auto text-center mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          Create High-Precision QR Codes
         </h1>
-        <p className="mt-3 text-base sm:text-lg text-slate-600 dark:text-slate-300">
-          Generate professional, permanent static QR codes in seconds. Vector SVG &amp; Ultra-HD print exports with built-in scannability diagnostics.
+        <p className="mt-1.5 text-xs sm:text-sm text-slate-500 leading-relaxed">
+          Permanent static QR codes generated directly in your browser. Vector SVG and Ultra-HD PNG downloads with zero middleman redirects.
         </p>
       </div>
 
-      {/* Main Unified Generator Container */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xl shadow-indigo-500/5 overflow-hidden">
-        {/* 1. Type Selector Tabs */}
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-2 sm:p-3 overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-1.5 min-w-max">
+      {/* Main Generator Surface */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+        {/* 1. Type Selector Tabs: Precision Horizontal Segmented Bar */}
+        <div className="border-b border-slate-200/80 bg-slate-50/80 p-2 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1 min-w-max mx-auto justify-start sm:justify-center">
             {QR_TYPE_CONFIG.map((item) => {
               const Icon = item.icon;
               const isActive = activeType === item.id;
@@ -339,14 +337,14 @@ export const QRWorkspace: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => handleTypeChange(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                     isActive
-                      ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/80 dark:border-slate-700 font-semibold"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/40"
+                      ? "bg-white text-slate-950 shadow-xs border border-slate-200/80 font-semibold"
+                      : "text-slate-600 hover:text-slate-950 hover:bg-white/60"
                   }`}
                   aria-pressed={isActive}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
                   <span>{item.shortLabel}</span>
                 </button>
               );
@@ -354,66 +352,60 @@ export const QRWorkspace: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Workspace Body: Left (Form + Customization) | Right (Preview & Download) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800">
-          {/* Left Column: Inputs & Customization (7 cols) */}
-          <div className="lg:col-span-7 p-6 sm:p-8 space-y-8">
-            {/* Active Type Title & Hint */}
-            <div>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {QR_TYPE_CONFIG.find((t) => t.id === activeType)?.label}
-                </h2>
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  Step 1: Enter details
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {QR_TYPE_CONFIG.find((t) => t.id === activeType)?.description}
-              </p>
-            </div>
-
-            {/* Dynamic Form Content */}
+        {/* 2. Workspace Body: Left (Input & Customization) | Right (Preview & Prepress) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
+          {/* Left Column: Form & Customization (7 cols) */}
+          <div className="lg:col-span-7 p-6 sm:p-7 space-y-7">
+            {/* Step 1: Content Input */}
             <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight text-slate-900">
+                    1. Content &bull; {QR_TYPE_CONFIG.find((t) => t.id === activeType)?.label}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {QR_TYPE_CONFIG.find((t) => t.id === activeType)?.description}
+                  </p>
+                </div>
+              </div>
+
               {/* URL Form */}
               {activeType === "url" && (
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Website or Destination URL
                   </label>
-                  <div className="relative">
-                    <input
-                      type="url"
-                      placeholder="https://example.com"
-                      value={formData.url.url}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          url: { ...formData.url, url: e.target.value },
-                        })
-                      }
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-mono"
-                    />
-                  </div>
+                  <input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={formData.url.url}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        url: { ...formData.url, url: e.target.value },
+                      })
+                    }
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600/20 text-xs sm:text-sm font-mono"
+                  />
                   {validation.errors.url && (
-                    <p className="mt-1.5 text-xs text-rose-500">{validation.errors.url}</p>
+                    <p className="mt-1 text-xs text-rose-500">{validation.errors.url}</p>
                   )}
-                  <p className="mt-1.5 text-xs text-slate-500">
-                    Direct encoding: The QR code points directly to your destination without any third-party redirect or middleman.
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Direct static link without any intermediary server or redirection fee.
                   </p>
                 </div>
               )}
 
               {/* Wi-Fi Form */}
               {activeType === "wifi" && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Network Name (SSID) <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. CafeGuest_5G"
+                      placeholder="e.g. OfficeGuest_5G"
                       value={formData.wifi.ssid}
                       onChange={(e) =>
                         setFormData({
@@ -421,17 +413,17 @@ export const QRWorkspace: React.FC = () => {
                           wifi: { ...formData.wifi, ssid: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 text-xs sm:text-sm"
                     />
                     {validation.errors.ssid && (
                       <p className="mt-1 text-xs text-rose-500">{validation.errors.ssid}</p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Security / Encryption
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Security Type
                       </label>
                       <select
                         value={formData.wifi.encryption}
@@ -444,7 +436,7 @@ export const QRWorkspace: React.FC = () => {
                             },
                           })
                         }
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                       >
                         <option value="WPA">WPA / WPA2 / WPA3 (Standard)</option>
                         <option value="WEP">WEP (Legacy)</option>
@@ -454,7 +446,7 @@ export const QRWorkspace: React.FC = () => {
 
                     {formData.wifi.encryption !== "nopass" && (
                       <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
                           Network Password
                         </label>
                         <input
@@ -467,7 +459,7 @@ export const QRWorkspace: React.FC = () => {
                               wifi: { ...formData.wifi, password: e.target.value },
                             })
                           }
-                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm font-mono"
+                          className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-mono"
                         />
                         {validation.errors.password && (
                           <p className="mt-1 text-xs text-rose-500">{validation.errors.password}</p>
@@ -476,7 +468,7 @@ export const QRWorkspace: React.FC = () => {
                     )}
                   </div>
 
-                  <label className="flex items-center gap-2 cursor-pointer pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer pt-0.5">
                     <input
                       type="checkbox"
                       checked={formData.wifi.hidden || false}
@@ -488,7 +480,7 @@ export const QRWorkspace: React.FC = () => {
                       }
                       className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                    <span className="text-xs text-slate-600">
                       Hidden Network (SSID broadcast is disabled)
                     </span>
                   </label>
@@ -497,15 +489,15 @@ export const QRWorkspace: React.FC = () => {
 
               {/* vCard Form */}
               {activeType === "vcard" && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
                         First Name <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="text"
-                        placeholder="Sarah"
+                        placeholder="Alex"
                         value={formData.vcard.firstName}
                         onChange={(e) =>
                           setFormData({
@@ -513,16 +505,16 @@ export const QRWorkspace: React.FC = () => {
                             vcard: { ...formData.vcard, firstName: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
                         Last Name
                       </label>
                       <input
                         type="text"
-                        placeholder="Connor"
+                        placeholder="Morgan"
                         value={formData.vcard.lastName || ""}
                         onChange={(e) =>
                           setFormData({
@@ -530,19 +522,19 @@ export const QRWorkspace: React.FC = () => {
                             vcard: { ...formData.vcard, lastName: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Organization / Company
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Organization
                       </label>
                       <input
                         type="text"
-                        placeholder="Cyberdyne Solutions"
+                        placeholder="UCreates Digital"
                         value={formData.vcard.organization || ""}
                         onChange={(e) =>
                           setFormData({
@@ -550,16 +542,16 @@ export const QRWorkspace: React.FC = () => {
                             vcard: { ...formData.vcard, organization: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Job Title
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Title
                       </label>
                       <input
                         type="text"
-                        placeholder="Chief Security Architect"
+                        placeholder="Lead Architect"
                         value={formData.vcard.title || ""}
                         onChange={(e) =>
                           setFormData({
@@ -567,19 +559,19 @@ export const QRWorkspace: React.FC = () => {
                             vcard: { ...formData.vcard, title: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Mobile Phone
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Phone
                       </label>
                       <input
                         type="tel"
-                        placeholder="+1 (555) 987-6543"
+                        placeholder="+1 (555) 019-2834"
                         value={formData.vcard.phone || ""}
                         onChange={(e) =>
                           setFormData({
@@ -587,16 +579,16 @@ export const QRWorkspace: React.FC = () => {
                             vcard: { ...formData.vcard, phone: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Email Address
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Email
                       </label>
                       <input
                         type="email"
-                        placeholder="sarah@example.com"
+                        placeholder="alex@ucreates.io"
                         value={formData.vcard.email || ""}
                         onChange={(e) =>
                           setFormData({
@@ -604,18 +596,18 @@ export const QRWorkspace: React.FC = () => {
                             vcard: { ...formData.vcard, email: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Website URL
                     </label>
                     <input
                       type="url"
-                      placeholder="https://example.com"
+                      placeholder="https://ucreates.io"
                       value={formData.vcard.url || ""}
                       onChange={(e) =>
                         setFormData({
@@ -623,7 +615,7 @@ export const QRWorkspace: React.FC = () => {
                           vcard: { ...formData.vcard, url: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                     />
                   </div>
                 </div>
@@ -631,9 +623,9 @@ export const QRWorkspace: React.FC = () => {
 
               {/* WhatsApp Form */}
               {activeType === "whatsapp" && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Phone Number with Country Code <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -646,14 +638,14 @@ export const QRWorkspace: React.FC = () => {
                           whatsapp: { ...formData.whatsapp, phone: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm font-mono"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm font-mono"
                     />
                     {validation.errors.phone && (
                       <p className="mt-1 text-xs text-rose-500">{validation.errors.phone}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Prefilled Message (Optional)
                     </label>
                     <textarea
@@ -666,7 +658,7 @@ export const QRWorkspace: React.FC = () => {
                           whatsapp: { ...formData.whatsapp, message: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                     />
                   </div>
                 </div>
@@ -675,12 +667,12 @@ export const QRWorkspace: React.FC = () => {
               {/* Plain Text Form */}
               {activeType === "text" && (
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Plain Text Content
                   </label>
                   <textarea
                     rows={4}
-                    placeholder="Enter any text, instructions, or alphanumeric code..."
+                    placeholder="Enter any text, instructions, or serial number..."
                     value={formData.text.text}
                     onChange={(e) =>
                       setFormData({
@@ -688,7 +680,7 @@ export const QRWorkspace: React.FC = () => {
                         text: { ...formData.text, text: e.target.value },
                       })
                     }
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm font-mono"
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm font-mono"
                   />
                   {validation.errors.text && (
                     <p className="mt-1 text-xs text-rose-500">{validation.errors.text}</p>
@@ -698,9 +690,9 @@ export const QRWorkspace: React.FC = () => {
 
               {/* Email Form */}
               {activeType === "email" && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Recipient Email <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -713,19 +705,19 @@ export const QRWorkspace: React.FC = () => {
                           email: { ...formData.email, email: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm"
                     />
                     {validation.errors.email && (
                       <p className="mt-1 text-xs text-rose-500">{validation.errors.email}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                      Email Subject
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Subject
                     </label>
                     <input
                       type="text"
-                      placeholder="Customer Inquiry"
+                      placeholder="Inquiry"
                       value={formData.email.subject || ""}
                       onChange={(e) =>
                         setFormData({
@@ -733,16 +725,16 @@ export const QRWorkspace: React.FC = () => {
                           email: { ...formData.email, subject: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                      Message Body
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Body
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="Hi team, I would like to enquire about..."
+                      placeholder="Message content..."
                       value={formData.email.body || ""}
                       onChange={(e) =>
                         setFormData({
@@ -750,7 +742,7 @@ export const QRWorkspace: React.FC = () => {
                           email: { ...formData.email, body: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                     />
                   </div>
                 </div>
@@ -759,8 +751,8 @@ export const QRWorkspace: React.FC = () => {
               {/* Phone Form */}
               {activeType === "phone" && (
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                    Telephone Number to Call <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Telephone Number <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -772,7 +764,7 @@ export const QRWorkspace: React.FC = () => {
                         phone: { ...formData.phone, phone: e.target.value },
                       })
                     }
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm font-mono"
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm font-mono"
                   />
                   {validation.errors.phone && (
                     <p className="mt-1 text-xs text-rose-500">{validation.errors.phone}</p>
@@ -782,10 +774,10 @@ export const QRWorkspace: React.FC = () => {
 
               {/* SMS Form */}
               {activeType === "sms" && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                      Recipient Phone Number <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Phone Number <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -797,19 +789,19 @@ export const QRWorkspace: React.FC = () => {
                           sms: { ...formData.sms, phone: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm font-mono"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm font-mono"
                     />
                     {validation.errors.phone && (
                       <p className="mt-1 text-xs text-rose-500">{validation.errors.phone}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                      SMS Message Body
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Prefilled Message
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="e.g. Please confirm my appointment for tomorrow."
+                      placeholder="e.g. Please confirm my appointment."
                       value={formData.sms.message || ""}
                       onChange={(e) =>
                         setFormData({
@@ -817,18 +809,18 @@ export const QRWorkspace: React.FC = () => {
                           sms: { ...formData.sms, message: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Geo Location Form */}
+              {/* Geo Form */}
               {activeType === "geo" && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
                         Latitude (-90 to 90) <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -841,11 +833,11 @@ export const QRWorkspace: React.FC = () => {
                             geo: { ...formData.geo, latitude: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm font-mono"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-mono"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
                         Longitude (-180 to 180) <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -858,26 +850,26 @@ export const QRWorkspace: React.FC = () => {
                             geo: { ...formData.geo, longitude: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm font-mono"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-mono"
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Automatically generates a universal Google Maps navigation link compatible with all iOS and Android smartphone camera readers.
+                  <p className="text-[11px] text-slate-400">
+                    Creates a universal navigation link that opens directly in Google Maps and Apple Maps.
                   </p>
                 </div>
               )}
 
               {/* Event Form */}
               {activeType === "event" && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Event Title <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Annual Gala & Awards"
+                      placeholder="Product Launch & Keynote"
                       value={formData.event.title}
                       onChange={(e) =>
                         setFormData({
@@ -885,13 +877,13 @@ export const QRWorkspace: React.FC = () => {
                           event: { ...formData.event, title: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Start Date &amp; Time
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Start Time
                       </label>
                       <input
                         type="datetime-local"
@@ -902,12 +894,12 @@ export const QRWorkspace: React.FC = () => {
                             event: { ...formData.event, startDate: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        End Date &amp; Time
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        End Time
                       </label>
                       <input
                         type="datetime-local"
@@ -918,17 +910,17 @@ export const QRWorkspace: React.FC = () => {
                             event: { ...formData.event, endDate: e.target.value },
                           })
                         }
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                      Venue / Location
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Location
                     </label>
                     <input
                       type="text"
-                      placeholder="Hotel Ballroom or Zoom Link"
+                      placeholder="Venue or Meeting Link"
                       value={formData.event.location || ""}
                       onChange={(e) =>
                         setFormData({
@@ -936,61 +928,69 @@ export const QRWorkspace: React.FC = () => {
                           event: { ...formData.event, location: e.target.value },
                         })
                       }
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm"
+                      className="w-full px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs"
                     />
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Step 2: Customization Tabs (Colors, Precision/Margin, Brand Logo) */}
-            <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Step 2: Customize Styling &amp; Precision
-                </span>
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-lg text-xs font-medium">
+            {/* Step 2: Customization — Reorganized into 3 Clear Groups */}
+            <div className="pt-5 border-t border-slate-200/80 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold tracking-tight text-slate-900">
+                  2. Customize QR Parameters
+                </h3>
+                {/* 3-Section Segmented Navigation */}
+                <div className="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200/60 text-xs font-medium">
                   <button
-                    onClick={() => setActiveTab("colors")}
-                    className={`px-3 py-1 rounded-md transition-colors ${
-                      activeTab === "colors"
-                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                        : "text-slate-600 dark:text-slate-400"
+                    type="button"
+                    onClick={() => setCustomSection("appearance")}
+                    className={`px-3 py-1 rounded-md transition-all ${
+                      customSection === "appearance"
+                        ? "bg-white text-slate-950 font-semibold shadow-2xs"
+                        : "text-slate-600 hover:text-slate-950"
                     }`}
                   >
-                    Colors
+                    Appearance
                   </button>
                   <button
-                    onClick={() => setActiveTab("options")}
-                    className={`px-3 py-1 rounded-md transition-colors ${
-                      activeTab === "options"
-                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                        : "text-slate-600 dark:text-slate-400"
+                    type="button"
+                    onClick={() => setCustomSection("precision")}
+                    className={`px-3 py-1 rounded-md transition-all ${
+                      customSection === "precision"
+                        ? "bg-white text-slate-950 font-semibold shadow-2xs"
+                        : "text-slate-600 hover:text-slate-950"
                     }`}
                   >
-                    Precision &amp; Margin
+                    Precision
                   </button>
                   <button
-                    onClick={() => setActiveTab("logo")}
-                    className={`px-3 py-1 rounded-md transition-colors ${
-                      activeTab === "logo"
-                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                        : "text-slate-600 dark:text-slate-400"
+                    type="button"
+                    onClick={() => setCustomSection("logo")}
+                    className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                      customSection === "logo"
+                        ? "bg-white text-slate-950 font-semibold shadow-2xs"
+                        : "text-slate-600 hover:text-slate-950"
                     }`}
                   >
-                    Center Logo
+                    <span>Logo</span>
+                    {customization.logo && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                    )}
                   </button>
                 </div>
               </div>
 
-              {/* Tab 1: Colors & Presets */}
-              {activeTab === "colors" && (
-                <div className="space-y-4">
+              {/* Group A: Appearance */}
+              {customSection === "appearance" && (
+                <div className="space-y-4 pt-1">
+                  {/* Curated Presets */}
                   <div>
-                    <label className="block text-xs text-slate-500 mb-2">
-                      Quick Curated Presets
+                    <label className="block text-xs font-medium text-slate-600 mb-2">
+                      Curated Color Pairings
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {COLOR_PRESETS.map((preset) => {
                         const isSelected =
                           customization.fgColor === preset.fg &&
@@ -1006,27 +1006,28 @@ export const QRWorkspace: React.FC = () => {
                                 bgColor: preset.bg,
                               })
                             }
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all ${
                               isSelected
-                                ? "border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20"
-                                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                                ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                             }`}
                           >
                             <span
-                              className="w-3.5 h-3.5 rounded-full border border-black/10 flex-shrink-0"
+                              className="w-4 h-4 rounded-full border border-black/10 flex-shrink-0 shadow-2xs"
                               style={{ backgroundColor: preset.fg }}
                             />
-                            <span>{preset.name}</span>
+                            <span className="truncate">{preset.name}</span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  {/* Custom Pickers */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Foreground Color (Modules)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Foreground (Modules)
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -1035,7 +1036,7 @@ export const QRWorkspace: React.FC = () => {
                           onChange={(e) =>
                             setCustomization({ ...customization, fgColor: e.target.value })
                           }
-                          className="w-9 h-9 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer p-0.5 bg-transparent"
+                          className="w-8 h-8 rounded-md border border-slate-300 cursor-pointer p-0.5 bg-transparent"
                         />
                         <input
                           type="text"
@@ -1043,14 +1044,14 @@ export const QRWorkspace: React.FC = () => {
                           onChange={(e) =>
                             setCustomization({ ...customization, fgColor: e.target.value })
                           }
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono uppercase"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-mono uppercase"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Background Color
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Background
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -1059,7 +1060,7 @@ export const QRWorkspace: React.FC = () => {
                           onChange={(e) =>
                             setCustomization({ ...customization, bgColor: e.target.value })
                           }
-                          className="w-9 h-9 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer p-0.5 bg-transparent"
+                          className="w-8 h-8 rounded-md border border-slate-300 cursor-pointer p-0.5 bg-transparent"
                         />
                         <input
                           type="text"
@@ -1067,67 +1068,80 @@ export const QRWorkspace: React.FC = () => {
                           onChange={(e) =>
                             setCustomization({ ...customization, bgColor: e.target.value })
                           }
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono uppercase"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-mono uppercase"
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* Contrast ratio metric */}
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs">
+                    <span className="text-slate-600 font-medium">Photometric Contrast Ratio:</span>
+                    <span className="font-mono font-semibold text-slate-900">
+                      {scannability.contrastRatio}:1 &bull;{" "}
+                      <span className={scannability.contrastGrade === "excellent" ? "text-emerald-600" : "text-amber-600"}>
+                        {scannability.contrastGrade.toUpperCase()}
+                      </span>
+                    </span>
                   </div>
                 </div>
               )}
 
-              {/* Tab 2: Precision & Margin */}
-              {activeTab === "options" && (
-                <div className="space-y-4">
+              {/* Group B: Precision */}
+              {customSection === "precision" && (
+                <div className="space-y-4 pt-1">
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Reed-Solomon Error Correction Level
+                      <label className="text-xs font-medium text-slate-700">
+                        Error Correction Level
                       </label>
-                      <span className="text-[11px] text-slate-500 font-mono">
+                      <span className="text-xs font-mono text-slate-500">
                         Level {customization.errorCorrectionLevel}
                       </span>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
-                      {(["L", "M", "Q", "H"] as ErrorCorrectionLevel[]).map((level) => {
-                        const descriptions: Record<ErrorCorrectionLevel, string> = {
-                          L: "7% Recovery (Smallest)",
-                          M: "15% (Standard Default)",
-                          Q: "25% (High Reliability)",
-                          H: "30% (Recommended for Logos)",
+                      {(["L", "M", "Q", "H"] as ErrorCorrectionLevel[]).map((lvl) => {
+                        const labels: Record<ErrorCorrectionLevel, string> = {
+                          L: "7% Recovery",
+                          M: "15% (Default)",
+                          Q: "25% (Print)",
+                          H: "30% (Logos)",
                         };
-                        const isSelected = customization.errorCorrectionLevel === level;
+                        const isSelected = customization.errorCorrectionLevel === lvl;
                         return (
                           <button
-                            key={level}
+                            key={lvl}
                             type="button"
                             onClick={() =>
                               setCustomization({
                                 ...customization,
-                                errorCorrectionLevel: level,
+                                errorCorrectionLevel: lvl,
                               })
                             }
-                            className={`p-2.5 rounded-xl border text-left transition-all ${
+                            className={`p-2 rounded-lg border text-left transition-all ${
                               isSelected
-                                ? "border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20"
-                                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                                ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                             }`}
                           >
-                            <div className="font-bold text-xs">Level {level}</div>
-                            <div className="text-[10px] opacity-75 mt-0.5">
-                              {descriptions[level]}
-                            </div>
+                            <div className="text-xs font-bold">Level {lvl}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">{labels[lvl]}</div>
                           </button>
                         );
                       })}
                     </div>
+                    <p className="mt-1.5 text-[11px] text-slate-400 leading-tight">
+                      Higher error correction allows smartphone cameras to reconstruct payloads even if modules are occluded or dirty.
+                    </p>
                   </div>
 
+                  {/* Quiet Zone Margin */}
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-medium text-slate-700">
                         Quiet Zone Margin
                       </label>
-                      <span className="text-xs font-mono text-slate-500">
+                      <span className="text-xs font-mono text-slate-600">
                         {customization.margin} modules {customization.margin === 4 ? "(ISO Standard)" : ""}
                       </span>
                     </div>
@@ -1143,29 +1157,62 @@ export const QRWorkspace: React.FC = () => {
                           margin: parseInt(e.target.value, 10),
                         })
                       }
-                      className="w-full accent-indigo-600 cursor-pointer"
+                      className="w-full accent-slate-900 cursor-pointer"
                     />
-                    <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                      <span>0 (Tight)</span>
+                    <div className="flex justify-between text-[10px] text-slate-400 mt-0.5 font-mono">
+                      <span>0 (None)</span>
                       <span>2 (Compact)</span>
-                      <span>4 (ISO Print Standard)</span>
+                      <span>4 (ISO Standard)</span>
                       <span>8 (Generous)</span>
                     </div>
+                  </div>
+
+                  {/* Print Sizing Calculator */}
+                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-slate-800">
+                        Print Sizing Calculator (10:1 Optical Rule)
+                      </span>
+                      <span className="text-xs font-mono font-bold text-slate-900">
+                        {printSize.sizeCm} cm &bull; {printSize.sizeInches} in
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] text-slate-500 min-w-max">Scan Distance:</span>
+                      <input
+                        type="range"
+                        min={0.2}
+                        max={3}
+                        step={0.1}
+                        value={viewingDistance}
+                        onChange={(e) => setViewingDistance(parseFloat(e.target.value))}
+                        className="w-full accent-slate-900 cursor-pointer"
+                      />
+                      <span className="text-xs font-mono text-slate-700 min-w-[50px] text-right">
+                        {viewingDistance} m
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {printSize.description}
+                    </p>
                   </div>
                 </div>
               )}
 
-              {/* Tab 3: Center Logo */}
-              {activeTab === "logo" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Upload Custom Brand Logo or Icon
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium cursor-pointer transition-colors">
-                        <ImageIcon className="w-4 h-4 text-indigo-500" />
-                        <span>{customization.logo ? "Change Logo Image" : "Upload PNG or SVG (Max 2MB)"}</span>
+              {/* Group C: Center Logo */}
+              {customSection === "logo" && (
+                <div className="space-y-4 pt-1">
+                  {!customization.logo ? (
+                    <div className="border border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
+                      <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+                      <p className="text-xs font-medium text-slate-800">
+                        Upload Custom Center Mark
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        PNG, JPEG, WebP, or SVG (Maximum 2MB)
+                      </p>
+                      <label className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors">
+                        <span>Select Image File</span>
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/svg+xml,image/webp"
@@ -1173,105 +1220,201 @@ export const QRWorkspace: React.FC = () => {
                           className="hidden"
                         />
                       </label>
-                      {customization.logo && (
-                        <button
-                          type="button"
-                          onClick={() => setCustomization({ ...customization, logo: null })}
-                          className="px-3 py-2.5 rounded-xl border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-medium transition-colors"
-                        >
-                          Remove
-                        </button>
-                      )}
                     </div>
-                    {logoError && (
-                      <p className="mt-2 text-xs text-rose-500 flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>{logoError}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  {customization.logo && (
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          Logo Size
-                        </label>
-                        <span className="text-xs font-mono text-slate-500">
-                          {customization.logoSize}%
-                        </span>
+                  ) : (
+                    <div className="space-y-3.5">
+                      {/* Active Logo Pill */}
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={customization.logo}
+                              alt="Logo thumbnail"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-900">Custom Logo Active</p>
+                            <p className="text-[11px] text-slate-500">
+                              Error correction set to Level {customization.errorCorrectionLevel}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs font-medium text-slate-700 hover:text-slate-950 cursor-pointer underline">
+                            Change
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                              onChange={handleLogoUpload}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomization((prev) => ({
+                                ...prev,
+                                logo: null,
+                              }))
+                            }
+                            className="text-xs font-medium text-rose-600 hover:text-rose-700"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
-                      <input
-                        type="range"
-                        min={12}
-                        max={28}
-                        step={1}
-                        value={customization.logoSize}
-                        onChange={(e) =>
-                          setCustomization({
-                            ...customization,
-                            logoSize: parseInt(e.target.value, 10),
-                          })
-                        }
-                        className="w-full accent-indigo-600 cursor-pointer"
-                      />
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        UCode automatically generates a protective quiet-zone pill behind your logo to preserve contrast and maximize module recovery.
+
+                      {/* Logo Size Control */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-medium text-slate-700">Logo Scale</label>
+                          <span className="text-xs font-mono text-slate-500">{customization.logoSize}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={12}
+                          max={26}
+                          step={1}
+                          value={customization.logoSize}
+                          onChange={(e) =>
+                            setCustomization({
+                              ...customization,
+                              logoSize: parseInt(e.target.value, 10),
+                            })
+                          }
+                          className="w-full accent-slate-900 cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Backing Padding */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                          Protective Backing Padding
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "Compact", value: 8 },
+                            { label: "Standard", value: 14 },
+                            { label: "Relaxed", value: 20 },
+                          ].map((pad) => (
+                            <button
+                              key={pad.value}
+                              type="button"
+                              onClick={() =>
+                                setCustomization({
+                                  ...customization,
+                                  logoPadding: pad.value,
+                                })
+                              }
+                              className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
+                                (customization.logoPadding ?? 12) === pad.value
+                                  ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold"
+                                  : "border-slate-200 text-slate-600 hover:border-slate-300"
+                              }`}
+                            >
+                              {pad.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Backing Corner Radius */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                          Backing Shape Style
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "Rounded Rect", value: 20 },
+                            { label: "Circle / Pill", value: 50 },
+                            { label: "Sharp Square", value: 6 },
+                          ].map((shape) => (
+                            <button
+                              key={shape.value}
+                              type="button"
+                              onClick={() =>
+                                setCustomization({
+                                  ...customization,
+                                  logoRadius: shape.value,
+                                })
+                              }
+                              className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
+                                (customization.logoRadius ?? 20) === shape.value
+                                  ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold"
+                                  : "border-slate-200 text-slate-600 hover:border-slate-300"
+                              }`}
+                            >
+                              {shape.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Advisory Notice */}
+                      <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 leading-relaxed">
+                        Logo overlays occlude central modules. UCode uses Level {customization.errorCorrectionLevel} Reed-Solomon recovery and an uncropped proportional fit to maintain optical readability. Always verify with your target camera before printing.
                       </p>
                     </div>
+                  )}
+
+                  {logoError && (
+                    <p className="text-xs text-rose-500 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{logoError}</span>
+                    </p>
                   )}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right Column: Live Preview, Diagnostics & Exports (5 cols) */}
-          <div className="lg:col-span-5 bg-slate-50/50 dark:bg-slate-950/30 p-6 sm:p-8 flex flex-col justify-between space-y-6">
+          {/* Right Column: Live Preview & Prepress Export (5 cols) */}
+          <div className="lg:col-span-5 bg-slate-50/50 p-6 sm:p-7 flex flex-col justify-between space-y-6">
             <div>
-              {/* Preview Header & Diagnostics Score */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Live Preview &amp; Validation
+              {/* Preview Header & Verification Status */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
+                  Live Preview
                 </span>
                 <button
                   type="button"
                   onClick={handleRunScanTest}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-100 transition-colors cursor-pointer"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>Scan Score: {scannability.score}/100</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Optical Score: {scannability.score}/100</span>
                 </button>
               </div>
 
-              {/* QR Canvas Container */}
-              <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-2xl p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-lg shadow-slate-900/5 flex items-center justify-center">
+              {/* QR Preview Canvas Container — Clean Square, No Fake Padding, No Corner Clipping */}
+              <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-center overflow-hidden">
                 <canvas
                   ref={canvasRef}
-                  className="w-full h-full object-contain rounded-lg"
+                  className="w-full h-full object-contain qr-canvas-crisp"
                   aria-label="Generated QR Code Preview"
                 />
 
-                {/* Status Overlays */}
+                {/* Incomplete Payload Overlay */}
                 {(!payload || !validation.isValid) && (
-                  <div className="absolute inset-4 rounded-xl bg-slate-900/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center text-white">
-                    <AlertTriangle className="w-8 h-8 text-amber-400 mb-2" />
-                    <p className="text-xs font-semibold">Incomplete or Invalid Input</p>
-                    <p className="text-[11px] text-slate-300 mt-1">
-                      Fill in the required fields on the left to render the live code.
+                  <div className="absolute inset-0 bg-white/90 backdrop-blur-2xs flex flex-col items-center justify-center p-4 text-center">
+                    <AlertTriangle className="w-6 h-6 text-amber-500 mb-1.5" />
+                    <p className="text-xs font-semibold text-slate-800">Input Required</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 max-w-[200px]">
+                      Complete the required fields on the left to render the QR code.
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Scannability Warning Badges if contrast/margin is suboptimal */}
+              {/* Scannability Warning Badges */}
               {scannability.recommendations.length > 0 && (
-                <div className="mt-3 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div className="space-y-0.5">
+                <div className="mt-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-0.5 text-[11px] leading-tight">
                     {scannability.recommendations.map((rec, i) => (
-                      <p key={i} className="text-[11px] leading-tight">
-                        {rec}
-                      </p>
+                      <p key={i}>{rec}</p>
                     ))}
                   </div>
                 </div>
@@ -1279,20 +1422,18 @@ export const QRWorkspace: React.FC = () => {
 
               {/* Download Feedback Banner */}
               {downloadSuccess && (
-                <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <div className="mt-3 p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                   <span>{downloadSuccess}</span>
                 </div>
               )}
             </div>
 
-            {/* Export Settings & Download Buttons */}
-            <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-              {/* Resolution Selector for PNG */}
+            {/* Prepress Export Section */}
+            <div className="space-y-3 pt-4 border-t border-slate-200/80">
+              {/* PNG Resolution Selector */}
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 dark:text-slate-400 font-medium">
-                  PNG Resolution:
-                </span>
+                <span className="text-slate-600 font-medium">PNG Resolution:</span>
                 <div className="flex items-center gap-1">
                   {[
                     { label: "512px", value: 512, hint: "Web" },
@@ -1306,8 +1447,8 @@ export const QRWorkspace: React.FC = () => {
                       onClick={() => setExportResolution(res.value)}
                       className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
                         exportResolution === res.value
-                          ? "bg-indigo-600 text-white font-bold"
-                          : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300"
+                          ? "bg-slate-900 text-white font-bold"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
                       {res.label}
@@ -1317,40 +1458,40 @@ export const QRWorkspace: React.FC = () => {
               </div>
 
               {/* Main Action Buttons */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleDownloadPNG}
-                  disabled={!payload || !validation.isValid}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download PNG</span>
-                </button>
-
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={handleDownloadSVG}
                   disabled={!payload || !validation.isValid}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg font-semibold text-xs text-white bg-slate-900 hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <Download className="w-3.5 h-3.5" />
                   <span>Vector SVG</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadPNG}
+                  disabled={!payload || !validation.isValid}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg font-semibold text-xs text-slate-800 bg-white border border-slate-300 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-600" />
+                  <span>{exportResolution}px PNG</span>
                 </button>
               </div>
 
-              {/* Secondary Actions: Copy to Clipboard & Print Sizing Guide */}
-              <div className="flex items-center justify-between gap-2 pt-1">
+              {/* Secondary Utility Actions */}
+              <div className="flex items-center justify-between gap-2 pt-1 text-xs">
                 <button
                   type="button"
                   onClick={handleCopyImage}
                   disabled={!payload || !validation.isValid}
-                  className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {copied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-emerald-600 font-medium">Copied to Clipboard!</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-600 font-medium">Copied!</span>
                     </>
                   ) : (
                     <>
@@ -1363,10 +1504,10 @@ export const QRWorkspace: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleRunScanTest}
-                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium cursor-pointer"
+                  className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print Readiness &amp; Sizing &rarr;</span>
+                  <span>Diagnostic Report &rarr;</span>
                 </button>
               </div>
 
@@ -1381,119 +1522,85 @@ export const QRWorkspace: React.FC = () => {
         </div>
       </div>
 
-      {/* Diagnostics & Print Readiness Modal */}
+      {/* Diagnostics Modal */}
       {isTestModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="diagnostic-modal-title"
         >
-          <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                <h3 id="diagnostic-modal-title" className="text-lg font-bold text-slate-900 dark:text-white">
-                  QR Diagnostic &amp; Print-Readiness Report
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <h3 id="diagnostic-modal-title" className="text-base font-bold text-slate-900">
+                  Optical Scannability &amp; Print Audit
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsTestModalOpen(false)}
                 aria-label="Close diagnostic report"
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Test Results */}
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Automated Camera Decoder Simulation (jsQR)
-                  </span>
+            {/* Simulated Decoder Verification */}
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700">Camera Decoder Test (jsQR)</span>
                   {testResult?.success ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Synthetic Decoder: 100% Match
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 100% Readable
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Unreadable
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Optical Failure
                     </span>
                   )}
                 </div>
+                <p className="text-[11px] text-slate-500">
+                  {testResult?.success
+                    ? "The synthetic camera sensor decoded the raw pixel matrix accurately."
+                    : "The synthetic camera could not resolve the finder patterns. Increase contrast or quiet zone margin."}
+                </p>
+                {testResult?.decodedPayload && (
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <span className="text-[10px] font-mono uppercase text-slate-400">Decoded String:</span>
+                    <p className="text-[11px] font-mono text-slate-800 break-all bg-white p-2 rounded border border-slate-200 mt-1 max-h-24 overflow-y-auto">
+                      {testResult.decodedPayload}
+                    </p>
+                  </div>
+                )}
+              </div>
 
-                <div className="text-xs text-slate-700 dark:text-slate-300">
-                  <strong>Decoded Payload:</strong>
-                  <p className="mt-1 font-mono text-[11px] p-2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 break-all">
-                    {testResult?.decodedPayload || "No payload extracted. Please check contrast or quiet zone."}
+              {/* Scannability Breakdown */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-slate-500 text-[11px]">Contrast Ratio</span>
+                  <p className="text-base font-bold text-slate-900 mt-0.5">{scannability.contrastRatio}:1</p>
+                  <p className="text-[11px] text-emerald-600 font-medium capitalize mt-0.5">{scannability.contrastGrade}</p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-slate-500 text-[11px]">Quiet Zone (Margin)</span>
+                  <p className="text-base font-bold text-slate-900 mt-0.5">{customization.margin} modules</p>
+                  <p className={`text-[11px] font-medium mt-0.5 ${scannability.quietZoneSafe ? "text-emerald-600" : "text-amber-600"}`}>
+                    {scannability.quietZoneSafe ? "ISO 18004 Compliant" : "Narrow Margin"}
                   </p>
                 </div>
-
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                  Note: A synthetic software decoder verifies mathematical pixel matrix consistency. Real-world scanning also depends on camera optics, ambient glare, substrate material, and distance. Always test with native iOS/Android camera apps before bulk printing.
-                </p>
-              </div>
-
-              {/* Optical Print Size Calculator */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-2">
-                  Optical Sizing Guide (10:1 Ratio)
-                </h4>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
-                    <span className="block text-slate-500 text-[10px]">Business Card</span>
-                    <strong className="block text-sm text-slate-900 dark:text-white mt-0.5">
-                      {calculatePrintSize(0.2).sizeCm} cm (0.8 in)
-                    </strong>
-                    <span className="text-[10px] text-slate-400">20cm viewing</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
-                    <span className="block text-slate-500 text-[10px]">Table Tent / Flyer</span>
-                    <strong className="block text-sm text-slate-900 dark:text-white mt-0.5">
-                      {calculatePrintSize(0.5).sizeCm} cm (2.0 in)
-                    </strong>
-                    <span className="text-[10px] text-slate-400">50cm viewing</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
-                    <span className="block text-slate-500 text-[10px]">Poster / Banner</span>
-                    <strong className="block text-sm text-slate-900 dark:text-white mt-0.5">
-                      {calculatePrintSize(1.5).sizeCm} cm (6.0 in)
-                    </strong>
-                    <span className="text-[10px] text-slate-400">1.5m viewing</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pre-Print Checklist */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-2">
-                  Pre-Print Commercial Checklist
-                </h4>
-                <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    <span>Always test print one copy on regular paper before ordering hundreds.</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    <span>Avoid high-gloss lamination on restaurant tables to prevent ambient glare.</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    <span>Ensure 4 modules of quiet zone border around the QR code matrix.</span>
-                  </li>
-                </ul>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+            <div className="pt-2 flex justify-end">
               <button
                 type="button"
                 onClick={() => setIsTestModalOpen(false)}
-                className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors"
               >
                 Close Report
               </button>

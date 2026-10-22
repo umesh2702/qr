@@ -97,6 +97,8 @@ export interface QRCustomizationOptions {
   size: number;
   logo: string | null;
   logoSize: number; // percentage 10 - 28
+  logoPadding?: number; // internal padding percentage (6 - 24)
+  logoRadius?: number; // corner radius percentage (0 = sharp, 20 = rounded, 50 = circle)
 }
 
 export interface ColorPreset {

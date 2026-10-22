@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Mail, MessageSquare, Clock, Sparkles } from "lucide-react";
+import { Mail, Clock, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
@@ -16,59 +16,58 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen flex flex-col bg-white text-slate-900 antialiased">
       <Header />
 
-      <main className="flex-1 py-12 md:py-20">
+      <main className="flex-1 py-10 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Header */}
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
-              <MessageSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Direct Support &amp; Engineering Enquiries</span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Inquiries &amp; Support
+            </span>
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
               Get in Touch
             </h1>
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-              Have feedback on UCode, need help with a custom QR deployment, or looking for bespoke web development from UCreates? We look forward to hearing from you.
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+              Have feedback on UCode, need help with a custom QR deployment, or looking for bespoke web engineering from UCreates? We look forward to hearing from you.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Direct Info Cards */}
-            <div className="lg:col-span-4 space-y-6">
-              <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <Mail className="w-5 h-5" />
+            <div className="lg:col-span-4 space-y-4">
+              <div className="p-5 rounded-xl border border-slate-200/90 bg-white space-y-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center">
+                  <Mail className="w-4 h-4" />
                 </div>
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">Direct Email</h3>
+                <h3 className="font-semibold text-sm text-slate-900">Direct Email</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   For general questions, partnerships, or immediate support inquiries:
                 </p>
                 <a
                   href="mailto:hello@ucreates.io"
-                  className="block text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="block text-xs font-semibold text-indigo-600 hover:underline pt-1"
                 >
                   hello@ucreates.io
                 </a>
               </div>
 
-              <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <Clock className="w-5 h-5" />
+              <div className="p-5 rounded-xl border border-slate-200/90 bg-white space-y-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center">
+                  <Clock className="w-4 h-4" />
                 </div>
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">Response Time</h3>
+                <h3 className="font-semibold text-sm text-slate-900">Response Time</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   We review project enquiries within 24 business hours. You will receive a direct reply from a senior solutions architect.
                 </p>
               </div>
 
-              <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" />
+              <div className="p-5 rounded-xl border border-slate-200/90 bg-white space-y-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
                 </div>
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">UCreates Solutions</h3>
+                <h3 className="font-semibold text-sm text-slate-900">UCreates Studio</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Looking for custom web apps, digital dining menus, or UX design systems? Fill out the project form to receive a detailed scope breakdown.
                 </p>

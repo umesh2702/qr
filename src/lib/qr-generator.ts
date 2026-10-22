@@ -7,81 +7,128 @@ export interface GenerateCanvasOptions extends QRCustomizationOptions {
 }
 
 /**
- * Draws QR code onto an HTML5 Canvas element with optional center logo.
+ * Draws QR code onto an HTML5 Canvas element with pixel-perfect module alignment
+ * and a protective, aspect-ratio-preserved center logo overlay.
  */
 export async function renderQRToCanvas(
   canvas: HTMLCanvasElement,
   payload: string,
   options: GenerateCanvasOptions
 ): Promise<void> {
-  const size = options.renderSize || options.size || 512;
-  canvas.width = size;
-  canvas.height = size;
+  const targetSize = options.renderSize || options.size || 512;
 
-  // Render base QR code onto canvas
-  await QRCode.toCanvas(canvas, payload, {
+  // 1. Calculate underlying QR matrix
+  const qr = QRCode.create(payload, {
     errorCorrectionLevel: options.errorCorrectionLevel,
-    margin: options.margin,
-    width: size,
-    color: {
-      dark: options.fgColor,
-      light: options.bgColor,
-    },
   });
+  const moduleCount = qr.modules.size;
+  const margin = Math.max(0, options.margin);
+  const totalModules = moduleCount + margin * 2;
 
-  // If a logo is specified, render the logo at center with a protective background
+  // 2. Compute exact integer module pixel size to prevent sub-pixel blurring
+  const modulePx = Math.max(1, Math.floor(targetSize / totalModules));
+  const matrixSize = totalModules * modulePx;
+
+  // Canvas dimensions set to targetSize
+  canvas.width = targetSize;
+  canvas.height = targetSize;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  // 3. Uniform background fill
+  ctx.fillStyle = options.bgColor;
+  ctx.fillRect(0, 0, targetSize, targetSize);
+
+  // Offset to center the integer-pixel matrix precisely on the canvas
+  const offset = Math.floor((targetSize - matrixSize) / 2);
+
+  // 4. Render modules with integer alignment
+  ctx.fillStyle = options.fgColor;
+  for (let r = 0; r < moduleCount; r++) {
+    for (let c = 0; c < moduleCount; c++) {
+      if (qr.modules.get(r, c)) {
+        const x = offset + (margin + c) * modulePx;
+        const y = offset + (margin + r) * modulePx;
+        ctx.fillRect(x, y, modulePx, modulePx);
+      }
+    }
+  }
+
+  // 5. Composite protective center logo
   if (options.logo) {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
     try {
       const img = await loadImage(options.logo);
       const logoPercent = (options.logoSize || 22) / 100;
-      const logoSize = Math.round(size * logoPercent);
-      const logoPadding = Math.round(logoSize * 0.12);
-      const totalBoxSize = logoSize + logoPadding * 2;
-      const x = Math.round((size - totalBoxSize) / 2);
-      const y = Math.round((size - totalBoxSize) / 2);
 
-      // Draw background pill/square in background color to protect quiet zone around logo
+      // Base backing size relative to matrix
+      const rawBoxSize = matrixSize * logoPercent;
+      const totalBoxSize = Math.max(24, Math.round(rawBoxSize));
+
+      // Ensure backing box is centered on the canvas
+      const boxX = Math.round((targetSize - totalBoxSize) / 2);
+      const boxY = Math.round((targetSize - totalBoxSize) / 2);
+
+      // Backing internal padding and corner radius
+      const padPercent = (options.logoPadding ?? 12) / 100;
+      const padding = Math.max(3, Math.round(totalBoxSize * padPercent));
+      const radiusPercent = (options.logoRadius ?? 20) / 100;
+      const borderRadius = Math.round(totalBoxSize * radiusPercent);
+
+      // A. Protective backing plate (matches QR background)
       ctx.save();
       ctx.fillStyle = options.bgColor;
-      ctx.shadowColor = "rgba(0,0,0,0.15)";
-      ctx.shadowBlur = Math.round(size * 0.015);
+      ctx.shadowColor = "rgba(0, 0, 0, 0.08)";
+      ctx.shadowBlur = Math.round(totalBoxSize * 0.08);
       ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = Math.round(size * 0.005);
+      ctx.shadowOffsetY = Math.max(1, Math.round(totalBoxSize * 0.02));
 
-      const borderRadius = Math.round(totalBoxSize * 0.2);
-      drawRoundedRect(ctx, x, y, totalBoxSize, totalBoxSize, borderRadius);
+      drawRoundedRect(ctx, boxX, boxY, totalBoxSize, totalBoxSize, borderRadius);
       ctx.fill();
       ctx.restore();
 
-      // Draw border around the logo cutout
+      // B. Subtle neutral backing border
       ctx.save();
       ctx.strokeStyle = options.fgColor;
-      ctx.lineWidth = Math.max(1, Math.round(size * 0.003));
-      ctx.globalAlpha = 0.2;
-      drawRoundedRect(ctx, x, y, totalBoxSize, totalBoxSize, borderRadius);
+      ctx.globalAlpha = 0.12;
+      ctx.lineWidth = Math.max(1, Math.round(targetSize * 0.002));
+      drawRoundedRect(ctx, boxX, boxY, totalBoxSize, totalBoxSize, borderRadius);
       ctx.stroke();
       ctx.restore();
 
-      // Clip and draw image
+      // C. Proportional image rendering (contain mode — never stretch or crop)
+      const maxImgW = totalBoxSize - padding * 2;
+      const maxImgH = totalBoxSize - padding * 2;
+      const naturalW = img.naturalWidth || img.width || 1;
+      const naturalH = img.naturalHeight || img.height || 1;
+      const aspect = naturalW / naturalH;
+
+      let drawW = maxImgW;
+      let drawH = maxImgH;
+      if (aspect > 1) {
+        drawH = maxImgW / aspect;
+      } else {
+        drawW = maxImgH * aspect;
+      }
+
+      const drawX = boxX + (totalBoxSize - drawW) / 2;
+      const drawY = boxY + (totalBoxSize - drawH) / 2;
+
+      // Draw image inside protective plate
       ctx.save();
-      const imgX = x + logoPadding;
-      const imgY = y + logoPadding;
-      const imgBorderRadius = Math.round(logoSize * 0.16);
-      drawRoundedRect(ctx, imgX, imgY, logoSize, logoSize, imgBorderRadius);
+      const innerRadius = Math.max(0, borderRadius - padding / 2);
+      drawRoundedRect(ctx, boxX + 1, boxY + 1, totalBoxSize - 2, totalBoxSize - 2, innerRadius);
       ctx.clip();
-      ctx.drawImage(img, imgX, imgY, logoSize, logoSize);
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
       ctx.restore();
     } catch (err) {
-      console.warn("Failed to composite logo onto QR canvas:", err);
+      console.warn("Failed to composite center logo onto QR canvas:", err);
     }
   }
 }
 
 /**
- * Generates an SVG string representation of the QR code.
+ * Generates an SVG string representation of the QR code with true coordinate alignment.
  */
 export async function generateQRSVG(
   payload: string,
@@ -100,22 +147,33 @@ export async function generateQRSVG(
 
   // If logo is present, insert an SVG image tag into the center
   if (options.logo) {
-    const size = options.size || 512;
+    // Parse viewBox to get exact SVG module coordinate space
+    const qr = QRCode.create(payload, {
+      errorCorrectionLevel: options.errorCorrectionLevel,
+    });
+    const qrcodesize = qr.modules.size + Math.max(0, options.margin) * 2;
+
     const logoPercent = (options.logoSize || 22) / 100;
-    const logoSize = Math.round(size * logoPercent);
-    const logoPadding = Math.round(logoSize * 0.12);
-    const totalBox = logoSize + logoPadding * 2;
-    const x = Math.round((size - totalBox) / 2);
-    const y = Math.round((size - totalBox) / 2);
-    const rx = Math.round(totalBox * 0.2);
+    const totalBox = Number((qrcodesize * logoPercent).toFixed(3));
+    const x = Number(((qrcodesize - totalBox) / 2).toFixed(3));
+    const y = Number(((qrcodesize - totalBox) / 2).toFixed(3));
+
+    const padPercent = (options.logoPadding ?? 12) / 100;
+    const padding = Number((totalBox * padPercent).toFixed(3));
+    const radiusPercent = (options.logoRadius ?? 20) / 100;
+    const rx = Number((totalBox * radiusPercent).toFixed(3));
+
+    const imgBox = Number((totalBox - padding * 2).toFixed(3));
+    const imgX = Number((x + padding).toFixed(3));
+    const imgY = Number((y + padding).toFixed(3));
 
     // Escape any quotes in the logo attribute for XML validity
     const safeLogoAttr = options.logo.replace(/"/g, "&quot;");
 
     const logoSvgElements = `
       <g id="ucode-center-logo">
-        <rect x="${x}" y="${y}" width="${totalBox}" height="${totalBox}" rx="${rx}" fill="${options.bgColor}" stroke="${options.fgColor}" stroke-opacity="0.2" stroke-width="1.5" />
-        <image x="${x + logoPadding}" y="${y + logoPadding}" width="${logoSize}" height="${logoSize}" href="${safeLogoAttr}" xlink:href="${safeLogoAttr}" preserveAspectRatio="xMidYMid slice" />
+        <rect x="${x}" y="${y}" width="${totalBox}" height="${totalBox}" rx="${rx}" fill="${options.bgColor}" stroke="${options.fgColor}" stroke-opacity="0.12" stroke-width="0.05" />
+        <image x="${imgX}" y="${imgY}" width="${imgBox}" height="${imgBox}" href="${safeLogoAttr}" xlink:href="${safeLogoAttr}" preserveAspectRatio="xMidYMid meet" />
       </g>
     </svg>`;
 
@@ -227,15 +285,16 @@ function drawRoundedRect(
   height: number,
   radius: number
 ): void {
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
 }

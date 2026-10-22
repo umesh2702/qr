@@ -1,6 +1,5 @@
 import React from "react";
 import type { Metadata } from "next";
-import { ShieldCheck } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { UcreatesBanner } from "@/components/UcreatesBanner";
@@ -16,29 +15,28 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen flex flex-col bg-white text-slate-900 antialiased">
       <Header />
 
-      <main className="flex-1 py-12 md:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <main className="flex-1 py-10 md:py-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           {/* Header */}
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Product Purpose &amp; Engineering Principles</span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <div className="space-y-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Product Principles
+            </span>
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
               Why We Built UCode
             </h1>
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+            <p className="text-sm sm:text-base text-slate-500 leading-relaxed">
               A free utility should respect its users. UCode was built to put an end to subscription traps and bring privacy back to the physical web.
             </p>
           </div>
 
           {/* Narrative Content */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-12 shadow-sm space-y-8 text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed">
-            <section className="space-y-4">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <div className="bg-white rounded-xl border border-slate-200/90 p-6 sm:p-8 space-y-7 text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <section className="space-y-3">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900">
                 The Problem With Modern QR Tools
               </h2>
               <p>
@@ -49,51 +47,45 @@ export default function AboutPage() {
               </p>
             </section>
 
-            <section className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <section className="space-y-3 pt-6 border-t border-slate-100">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900">
                 Our Three Engineering Commitments
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
-                    01
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                <div className="p-4 rounded-lg bg-slate-50/70 border border-slate-200/70 space-y-1.5">
+                  <span className="text-xs font-mono font-bold text-slate-400">01</span>
+                  <h3 className="font-semibold text-xs text-slate-900">
                     Direct Encoding Only
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
                     All static QR codes are mathematically encoded into the image matrix. Zero third-party redirects. They can never expire.
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
-                    02
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                <div className="p-4 rounded-lg bg-slate-50/70 border border-slate-200/70 space-y-1.5">
+                  <span className="text-xs font-mono font-bold text-slate-400">02</span>
+                  <h3 className="font-semibold text-xs text-slate-900">
                     100% In-Browser Privacy
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
                     Your Wi-Fi passwords, contact addresses, and private URLs are processed locally by your browser. No server storage.
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold text-xs">
-                    03
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                <div className="p-4 rounded-lg bg-slate-50/70 border border-slate-200/70 space-y-1.5">
+                  <span className="text-xs font-mono font-bold text-slate-400">03</span>
+                  <h3 className="font-semibold text-xs text-slate-900">
                     No Forced Signup
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
                     No account registration, no email verification, no watermarks, and no download timers. Just create and go.
                   </p>
                 </div>
               </div>
             </section>
 
-            <section className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <section className="space-y-3 pt-6 border-t border-slate-100">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900">
                 The Relationship Between UCode and UCreates
               </h2>
               <p>

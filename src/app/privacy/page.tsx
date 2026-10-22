@@ -15,27 +15,27 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-neutral-900">
       <Header />
 
-      <main className="flex-1 py-12 md:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+      <main className="flex-1 py-12 md:py-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-8">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               <span>Transparent &amp; Honest Data Practices</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900">
               Privacy Policy
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-neutral-500">
               Last updated: October 2026 • Effective immediately
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-12 shadow-sm space-y-8 text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed">
-            <section className="space-y-3">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+          <div className="bg-white rounded-2xl border border-neutral-200/80 p-8 sm:p-10 shadow-sm space-y-8 text-sm sm:text-base text-neutral-600 leading-relaxed">
+            <section className="space-y-2">
+              <h2 className="text-lg font-semibold text-neutral-900">
                 1. Our Core Privacy Philosophy
               </h2>
               <p>
@@ -43,14 +43,14 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            <section className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            <section className="space-y-2 pt-6 border-t border-neutral-100">
+              <h2 className="text-lg font-semibold text-neutral-900">
                 2. In-Browser Client-Side Generation
               </h2>
               <p>
                 When you input a URL, Wi-Fi network passkey, vCard contact card, or phone number into the UCode unified generator:
               </p>
-              <ul className="list-disc list-inside space-y-1.5 pl-2 text-slate-600 dark:text-slate-400 text-sm">
+              <ul className="list-disc list-inside space-y-1.5 pl-2 text-neutral-600 text-sm">
                 <li>The payload is encoded directly into memory on your personal device using JavaScript Canvas and SVG standards.</li>
                 <li><strong>No QR payloads are ever transmitted to our web servers.</strong></li>
                 <li><strong>No Wi-Fi credentials or contact names are saved in cookies, local storage, or application logs.</strong></li>
@@ -58,8 +58,8 @@ export default function PrivacyPage() {
               </ul>
             </section>
 
-            <section className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            <section className="space-y-2 pt-6 border-t border-neutral-100">
+              <h2 className="text-lg font-semibold text-neutral-900">
                 3. Analytics and Measurement
               </h2>
               <p>
@@ -70,8 +70,8 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            <section className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            <section className="space-y-2 pt-6 border-t border-neutral-100">
+              <h2 className="text-lg font-semibold text-neutral-900">
                 4. Advertising &amp; Third-Party Partners
               </h2>
               <p>
@@ -79,8 +79,8 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            <section className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            <section className="space-y-2 pt-6 border-t border-neutral-100">
+              <h2 className="text-lg font-semibold text-neutral-900">
                 5. Project Enquiries &amp; Contact Forms
               </h2>
               <p>
@@ -88,14 +88,14 @@ export default function PrivacyPage() {
               </p>
             </section>
 
-            <section className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            <section className="space-y-2 pt-6 border-t border-neutral-100">
+              <h2 className="text-lg font-semibold text-neutral-900">
                 6. Contact for Privacy Questions
               </h2>
               <p>
                 If you have any questions regarding this policy or our technical architecture, please contact our engineering team directly at:
               </p>
-              <p className="font-semibold text-slate-900 dark:text-white">
+              <p className="font-medium text-neutral-900">
                 hello@ucreates.io
               </p>
             </section>

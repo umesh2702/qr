@@ -412,13 +412,40 @@ describe("SVG Output Generation", () => {
       errorCorrectionLevel: "H",
       margin: 4,
       size: 512,
-      logo: "data:image/svg+xml;utf8,<svg viewBox=\"0 0 10 10\"></svg>",
+      logo: 'data:image/svg+xml;utf8,<svg viewBox="0 0 10 10"></svg>',
       logoSize: 20,
     });
 
     expect(svg).toContain('<g id="ucode-center-logo">');
     expect(svg).toContain("xlink:href=");
     expect(svg).not.toContain('href="data:image/svg+xml;utf8,<svg viewBox="0'); // quotes properly escaped
+  });
+
+  it("renders protective backing plate with custom padding and corner radius in module coordinates", async () => {
+    const svg = await generateQRSVG("https://ucreates.io", {
+      fgColor: "#000000",
+      bgColor: "#ffffff",
+      errorCorrectionLevel: "H",
+      margin: 4,
+      size: 512,
+      logo: 'data:image/svg+xml;utf8,<svg viewBox="0 0 10 10"></svg>',
+      logoSize: 20,
+      logoPadding: 16,
+      logoRadius: 8,
+    });
+
+    // Contains backing rect with rx (radius) and fill (white)
+    expect(svg).toContain('<rect');
+    expect(svg).toContain('rx=');
+    expect(svg).toContain('preserveAspectRatio="xMidYMid meet"');
+    // Ensure logo coordinates are in module space (e.g. < 50 for version 2-4 QR code), not pixel space (512)
+    const logoGroup = svg.match(/<g id="ucode-center-logo">([\s\S]*?)<\/g>/)?.[1];
+    expect(logoGroup).toBeDefined();
+    // In module coordinates, x coordinate should be proportional to modules (e.g. ~10-25), not > 100
+    const xMatch = logoGroup?.match(/x="([\d.]+)"/);
+    expect(xMatch).toBeTruthy();
+    const xVal = parseFloat(xMatch![1]);
+    expect(xVal).toBeLessThan(50);
   });
 });
 

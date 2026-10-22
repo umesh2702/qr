@@ -6,23 +6,23 @@ import { Footer } from "@/components/Footer";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-neutral-900">
       <Header />
 
       <main className="flex-1 flex items-center justify-center py-20 px-4">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-sm">
-            <QrCode className="w-8 h-8" />
+          <div className="w-14 h-14 rounded-2xl bg-neutral-100 text-neutral-900 flex items-center justify-center mx-auto border border-neutral-200/80">
+            <QrCode className="w-7 h-7" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-rose-500">
               Error 404 • Destination Missing
             </span>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
               Page Not Found
             </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-neutral-600">
               The page you are looking for doesn’t exist or has moved. Let’s get you back on track to generating QR codes.
             </p>
           </div>
@@ -30,7 +30,7 @@ export default function NotFound() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link
               href="/"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-xs text-white bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-xs text-white bg-neutral-900 hover:bg-neutral-800 transition-colors"
             >
               <Home className="w-4 h-4" />
               <span>Back to QR Generator</span>
@@ -38,7 +38,7 @@ export default function NotFound() {
 
             <Link
               href="/blog"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-xs text-neutral-700 bg-white border border-neutral-200 hover:bg-neutral-50 transition-colors"
             >
               <span>Explore Guides</span>
             </Link>

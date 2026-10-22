@@ -48,7 +48,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
         <span className="text-[9px] opacity-70">UCode Sponsor</span>
       </div>
       <div
-        className={`w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden ${heightClasses}`}
+        className={`w-full flex items-center justify-center bg-neutral-50 border border-dashed border-neutral-200 rounded-lg overflow-hidden ${heightClasses}`}
       >
         <ins
           className="adsbygoogle"
