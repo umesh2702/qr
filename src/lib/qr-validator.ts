@@ -213,15 +213,18 @@ export function calculateContrastRatio(fgHex: string, bgHex: string): number {
 }
 
 /**
- * Evaluates scannability, contrast, quiet zone, and error-correction suitability.
+ * Evaluates optical and geometric quality: contrast ratio, quiet zone adherence,
+ * error correction suitability, and optional decoder verification status.
  */
 export function evaluateScannability(
-  options: QRCustomizationOptions
+  options: QRCustomizationOptions,
+  decoderStatus?: { tested: boolean; success: boolean }
 ): ScannabilityReport {
   const recommendations: string[] = [];
   let score = 100;
+  let logoWarning: string | null = null;
 
-  // 1. Contrast calculation
+  // 1. Contrast calculation according to WCAG 2.1
   const fgRgb = hexToRgb(options.fgColor);
   const bgRgb = hexToRgb(options.bgColor);
   const fgLum = getRelativeLuminance(fgRgb);
@@ -232,9 +235,9 @@ export function evaluateScannability(
 
   // Check inverted colors (dark background, light foreground)
   if (bgLum < fgLum) {
-    score -= 20;
+    score -= 15;
     recommendations.push(
-      "Inverted colors detected (light on dark). Standard barcode readers scan dark-on-light codes faster and more reliably."
+      "Inverted colors detected (light foreground on dark background). Standard optical sensors scan dark-on-light codes faster and more reliably."
     );
   }
 
@@ -242,49 +245,102 @@ export function evaluateScannability(
     contrastGrade = "excellent";
   } else if (contrastRatio >= 4.0) {
     contrastGrade = "acceptable";
-    score -= 10;
+    score -= 15;
     recommendations.push(
-      "Moderate contrast detected. Consider darkening foreground or lightening background for reliable outdoor scanning."
+      `Moderate contrast ratio (${contrastRatio}:1). Increase foreground darkness or background lightness for outdoor sunlight readability.`
     );
   } else {
     contrastGrade = "poor";
     score -= 40;
     recommendations.push(
-      `Low contrast ratio (${contrastRatio}:1). Many camera scanners will struggle to read this code. Increase contrast.`
+      `Critically low contrast ratio (${contrastRatio}:1). Camera sensors will struggle to distinguish modules. Target at least 7.0:1.`
     );
   }
 
-  // 2. Quiet zone evaluation
-  const quietZoneSafe = options.margin >= 2;
+  // 2. Quiet zone evaluation (ISO/IEC 18004 specifies 4 modules)
+  const quietZoneSafe = options.margin >= 4;
   if (options.margin === 0) {
     score -= 25;
     recommendations.push(
-      "Zero margin selected. QR codes require a quiet zone around modules to separate from surrounding background graphics."
+      "Zero margin selected. ISO/IEC 18004 standard requires a 4-module quiet zone to prevent nearby background graphics from corrupting finder patterns."
     );
   } else if (options.margin < 2) {
+    score -= 15;
+    recommendations.push(
+      "Critically narrow margin (1 module). A minimum margin of 4 modules is recommended for prepress packaging and print."
+    );
+  } else if (options.margin < 4) {
     score -= 10;
     recommendations.push(
-      "Narrow margin (1 module). A minimum margin of 2–4 modules is recommended for print."
+      `Narrow margin (${options.margin} modules). ISO/IEC 18004 recommends 4 modules of quiet zone for reliable camera capture.`
     );
   }
 
-  // 3. Logo vs Error Correction evaluation
+  // 3. Logo vs Reed-Solomon Error Correction evaluation
   let logoSafe = true;
-  if (options.logo) {
+  const hasLogo = Boolean(options.logo && options.logoMode !== false);
+  if (hasLogo) {
+    const logoSize = options.logoSize || 18;
     if (options.errorCorrectionLevel === "L") {
       logoSafe = false;
-      score -= 30;
+      score -= 35;
+      logoWarning = "Logo enabled with Level L (7%) error correction. Reed-Solomon recovery is insufficient for center occlusion.";
       recommendations.push(
-        "Logo is enabled with 'L' (Low 7%) error correction. Change error correction to 'Q' (25%) or 'H' (30%) so the code can recover occluded modules."
+        "Center logo enabled with Level L (7%) error correction. Upgrade to Level H (30%) immediately to recover occluded modules."
       );
     } else if (options.errorCorrectionLevel === "M") {
-      if (options.logoSize > 20) {
+      logoSafe = false;
+      score -= 25;
+      logoWarning = "Logo enabled with Level M (15%) error correction. High risk of scan failure.";
+      recommendations.push(
+        "Level M (15%) provides limited defect tolerance for center logos. We strongly recommend Level H (30%) error correction."
+      );
+    } else if (options.errorCorrectionLevel === "Q") {
+      if (logoSize > 18) {
         logoSafe = false;
         score -= 15;
+        logoWarning = `Logo scale (${logoSize}%) exceeds safe headroom for Level Q (25%). Upgrade to Level H (30%).`;
         recommendations.push(
-          "Large logo with 'M' error correction may exceed recovery threshold. We recommend 'H' (High 30%) error correction."
+          `Logo scale (${logoSize}%) leaves minimal Reed-Solomon recovery headroom under Level Q. Switch to Level H (30%) to ensure scan reliability.`
         );
+      } else {
+        logoSafe = true;
       }
+    } else if (options.errorCorrectionLevel === "H") {
+      if (logoSize > 25) {
+        logoSafe = false;
+        score -= 10;
+        logoWarning = `Large logo scale (${logoSize}%) covers significant central modules. Test thoroughly under target camera conditions.`;
+        recommendations.push(
+          `Large logo scale (${logoSize}%) approaches the upper boundary of Level H (30%) error recovery. Keep below 22% for maximum camera angle tolerance.`
+        );
+      } else {
+        logoSafe = true;
+      }
+    }
+  }
+
+  // 4. Style Studio scannability checks
+  let styleWarning: string | null = null;
+  if (options.moduleShape === "diamond" && options.errorCorrectionLevel === "L") {
+    score -= 5;
+    styleWarning = "Diamond module shape with Level L error correction. We recommend Level M or H for maximum optical tolerance.";
+    recommendations.push(
+      "Diamond modules reduce cell fill area. Pair with Error Correction Level M or H to ensure rapid camera recognition."
+    );
+  }
+
+  // 5. Decoder Verification override
+  let decoderVerified = false;
+  if (decoderStatus && decoderStatus.tested) {
+    if (!decoderStatus.success) {
+      // If independent decoder failed to decode rendered output, clamp score to failure level
+      score = Math.min(score, 30);
+      recommendations.unshift(
+        "Software Decoder Validation FAILED: An independent QR decoder could not extract the payload from the rendered visual output. Reduce logo size, adjust style, or increase contrast."
+      );
+    } else {
+      decoderVerified = true;
     }
   }
 
@@ -294,6 +350,9 @@ export function evaluateScannability(
     contrastGrade,
     quietZoneSafe,
     logoSafe,
+    logoWarning,
+    styleWarning,
+    decoderVerified,
     recommendations,
   };
 }

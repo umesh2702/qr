@@ -21,6 +21,9 @@ import {
   CheckCircle2,
   X,
   Upload,
+  Sparkles,
+  Palette,
+  Sliders,
 } from "lucide-react";
 import {
   QRType,
@@ -28,6 +31,9 @@ import {
   QRCustomizationOptions,
   ErrorCorrectionLevel,
   ScannabilityReport,
+  QRModuleShape,
+  QRPatternStyle,
+  QRFinderStyle,
 } from "@/types/qr";
 import { encodeQRPayload } from "@/lib/qr-encoders";
 import {
@@ -73,6 +79,68 @@ const COLOR_PRESETS = [
   { id: "teal", name: "Cyber Teal", fg: "#164e63", bg: "#ecfeff" },
 ];
 
+const STYLE_PRESETS: {
+  id: string;
+  name: string;
+  tagline: string;
+  moduleShape: QRModuleShape;
+  patternStyle: QRPatternStyle;
+  finderStyle: QRFinderStyle;
+  fgColor: string;
+  bgColor: string;
+}[] = [
+  {
+    id: "classic",
+    name: "Classic Noir",
+    tagline: "Standard crisp geometric modules",
+    moduleShape: "square",
+    patternStyle: "classic-grid",
+    finderStyle: "square",
+    fgColor: "#000000",
+    bgColor: "#ffffff",
+  },
+  {
+    id: "modern-flow",
+    name: "Modern Flow",
+    tagline: "Connected liquid circuit aesthetic",
+    moduleShape: "rounded-square",
+    patternStyle: "connected-flow",
+    finderStyle: "rounded",
+    fgColor: "#0f172a",
+    bgColor: "#f8fafc",
+  },
+  {
+    id: "cyber-dots",
+    name: "Cyber Dots",
+    tagline: "Futuristic circular matrix",
+    moduleShape: "bubble",
+    patternStyle: "dotted-matrix",
+    finderStyle: "circular",
+    fgColor: "#164e63",
+    bgColor: "#ecfeff",
+  },
+  {
+    id: "soft-minimal",
+    name: "Soft Tech",
+    tagline: "Cushioned rounded pixels",
+    moduleShape: "soft-pixel",
+    patternStyle: "soft-grid",
+    finderStyle: "rounded",
+    fgColor: "#312e81",
+    bgColor: "#eef2ff",
+  },
+  {
+    id: "luxe-diamond",
+    name: "Luxe Diamond",
+    tagline: "Angled faceted diamond cells",
+    moduleShape: "diamond",
+    patternStyle: "classic-grid",
+    finderStyle: "square",
+    fgColor: "#881337",
+    bgColor: "#fff1f2",
+  },
+];
+
 export const QRWorkspace: React.FC = () => {
   const [activeType, setActiveType] = useState<QRType>("url");
 
@@ -107,21 +175,25 @@ export const QRWorkspace: React.FC = () => {
     },
   });
 
-  // Customization state
+  // Customization state with Style Studio defaults
   const [customization, setCustomization] = useState<QRCustomizationOptions>({
     fgColor: "#000000",
     bgColor: "#ffffff",
     errorCorrectionLevel: "M",
     margin: 4,
     size: 512,
+    moduleShape: "square",
+    patternStyle: "classic-grid",
+    finderStyle: "square",
     logo: null,
-    logoSize: 22,
+    logoSize: 18,
     logoPadding: 12,
     logoRadius: 20,
+    logoMode: false,
   });
 
-  // Reorganized customization group: "appearance" | "precision" | "logo"
-  const [customSection, setCustomSection] = useState<"appearance" | "precision" | "logo">("appearance");
+  // Dedicated customization sections: "style" | "colors" | "logo" | "precision"
+  const [customSection, setCustomSection] = useState<"style" | "colors" | "logo" | "precision">("style");
 
   const [exportResolution, setExportResolution] = useState<number>(2048);
   const [copied, setCopied] = useState(false);
@@ -130,6 +202,7 @@ export const QRWorkspace: React.FC = () => {
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; decodedPayload: string | null } | null>(null);
+  const [liveDecoderStatus, setLiveDecoderStatus] = useState<{ tested: boolean; success: boolean; decodedPayload: string | null } | null>(null);
   const [viewingDistance, setViewingDistance] = useState<number>(1);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -138,7 +211,7 @@ export const QRWorkspace: React.FC = () => {
   const currentFormData = formData[activeType];
   const payload = encodeQRPayload(activeType, currentFormData as never);
   const validation = validateQRFormData(activeType, currentFormData as never);
-  const scannability: ScannabilityReport = evaluateScannability(customization);
+  const scannability: ScannabilityReport = evaluateScannability(customization, liveDecoderStatus || undefined);
 
   // Redraw canvas whenever payload, type, or customization changes
   const updateCanvas = useCallback(async () => {
@@ -146,13 +219,24 @@ export const QRWorkspace: React.FC = () => {
     if (!payload || !validation.isValid) {
       const ctx = canvasRef.current.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      requestAnimationFrame(() => {
+        setLiveDecoderStatus(null);
+      });
       return;
     }
 
     try {
       await renderQRToCanvas(canvasRef.current, payload, customization);
+      // Run independent decoder against visual canvas output
+      const scan = verifyCanvasScan(canvasRef.current);
+      requestAnimationFrame(() => {
+        setLiveDecoderStatus({ tested: true, success: scan.success, decodedPayload: scan.decodedPayload });
+      });
     } catch (err) {
       console.warn("Canvas render failed:", err);
+      requestAnimationFrame(() => {
+        setLiveDecoderStatus({ tested: true, success: false, decodedPayload: null });
+      });
     }
   }, [payload, validation.isValid, customization]);
 
@@ -216,10 +300,8 @@ export const QRWorkspace: React.FC = () => {
             setCustomization((prev) => ({
               ...prev,
               logo: safeDataUrl,
-              errorCorrectionLevel:
-                prev.errorCorrectionLevel === "L" || prev.errorCorrectionLevel === "M"
-                  ? "Q"
-                  : prev.errorCorrectionLevel,
+              logoMode: true,
+              errorCorrectionLevel: "H",
             }));
           }
         };
@@ -231,10 +313,8 @@ export const QRWorkspace: React.FC = () => {
         setCustomization((prev) => ({
           ...prev,
           logo: rawDataUrl,
-          errorCorrectionLevel:
-            prev.errorCorrectionLevel === "L" || prev.errorCorrectionLevel === "M"
-              ? "Q"
-              : prev.errorCorrectionLevel,
+          logoMode: true,
+          errorCorrectionLevel: "H",
         }));
       }
     };
@@ -307,6 +387,7 @@ export const QRWorkspace: React.FC = () => {
     if (!canvasRef.current) return;
     const scan = verifyCanvasScan(canvasRef.current);
     setTestResult(scan);
+    setLiveDecoderStatus({ tested: true, success: scan.success, decodedPayload: scan.decodedPayload });
     setIsTestModalOpen(true);
     analytics.track("scannability_diagnostics_viewed", { qrType: activeType });
   };
@@ -935,55 +1016,249 @@ export const QRWorkspace: React.FC = () => {
               )}
             </div>
 
-            {/* Step 2: Customization — Reorganized into 3 Clear Groups */}
+            {/* Step 2: Customization — Dedicated Style Studio & Advanced Options */}
             <div className="pt-5 border-t border-slate-200/80 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold tracking-tight text-slate-900">
-                  2. Customize QR Parameters
+                <h3 className="text-sm font-semibold tracking-tight text-slate-900 flex items-center gap-1.5">
+                  <span>2. Style Studio &amp; Customization</span>
                 </h3>
-                {/* 3-Section Segmented Navigation */}
-                <div className="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200/60 text-xs font-medium">
+                {/* 4-Section Segmented Navigation */}
+                <div className="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200/60 text-xs font-medium overflow-x-auto scrollbar-none">
                   <button
                     type="button"
-                    onClick={() => setCustomSection("appearance")}
-                    className={`px-3 py-1 rounded-md transition-all ${
-                      customSection === "appearance"
+                    onClick={() => setCustomSection("style")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all cursor-pointer ${
+                      customSection === "style"
                         ? "bg-white text-slate-950 font-semibold shadow-2xs"
                         : "text-slate-600 hover:text-slate-950"
                     }`}
                   >
-                    Appearance
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Style Studio</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCustomSection("precision")}
-                    className={`px-3 py-1 rounded-md transition-all ${
-                      customSection === "precision"
+                    onClick={() => setCustomSection("colors")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all cursor-pointer ${
+                      customSection === "colors"
                         ? "bg-white text-slate-950 font-semibold shadow-2xs"
                         : "text-slate-600 hover:text-slate-950"
                     }`}
                   >
-                    Precision
+                    <Palette className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Colors</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setCustomSection("logo")}
-                    className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all cursor-pointer ${
                       customSection === "logo"
                         ? "bg-white text-slate-950 font-semibold shadow-2xs"
                         : "text-slate-600 hover:text-slate-950"
                     }`}
                   >
                     <span>Logo</span>
-                    {customization.logo && (
+                    {customization.logo && customization.logoMode !== false && (
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
                     )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomSection("precision")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all cursor-pointer ${
+                      customSection === "precision"
+                        ? "bg-white text-slate-950 font-semibold shadow-2xs"
+                        : "text-slate-600 hover:text-slate-950"
+                    }`}
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Precision</span>
                   </button>
                 </div>
               </div>
 
-              {/* Group A: Appearance */}
-              {customSection === "appearance" && (
+              {/* Group 1: Style Studio */}
+              {customSection === "style" && (
+                <div className="space-y-4 pt-1">
+                  {/* Curated Presets */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">
+                      Curated Style Presets
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {STYLE_PRESETS.map((preset) => {
+                        const isSelected =
+                          customization.moduleShape === preset.moduleShape &&
+                          customization.patternStyle === preset.patternStyle &&
+                          customization.finderStyle === preset.finderStyle &&
+                          customization.fgColor === preset.fgColor &&
+                          customization.bgColor === preset.bgColor;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() =>
+                              setCustomization((prev) => ({
+                                ...prev,
+                                moduleShape: preset.moduleShape,
+                                patternStyle: preset.patternStyle,
+                                finderStyle: preset.finderStyle,
+                                fgColor: preset.fgColor,
+                                bgColor: preset.bgColor,
+                              }))
+                            }
+                            className={`flex flex-col text-left p-2.5 rounded-xl border text-xs transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-bold">{preset.name}</span>
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/10 flex-shrink-0"
+                                style={{ backgroundColor: preset.fgColor }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-slate-500 leading-tight">
+                              {preset.tagline}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Module Shape */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-medium text-slate-700">Module Shape</label>
+                      <span className="text-[11px] text-slate-500 font-mono capitalize">
+                        {(customization.moduleShape || "square").replace("-", " ")}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: "square", label: "Classic Squares", desc: "Crisp rectangular cells" },
+                        { id: "rounded-square", label: "Rounded Squares", desc: "Controlled smooth radius" },
+                        { id: "bubble", label: "Bubble / Dots", desc: "Centered circular dots" },
+                        { id: "soft-pixel", label: "Soft Pixels", desc: "Subtle softened edges" },
+                        { id: "diamond", label: "Diamond Facets", desc: "Angled geometric rhombuses" },
+                      ].map((shape) => {
+                        const isSelected = (customization.moduleShape || "square") === shape.id;
+                        return (
+                          <button
+                            key={shape.id}
+                            type="button"
+                            onClick={() =>
+                              setCustomization((prev) => ({
+                                ...prev,
+                                moduleShape: shape.id as QRModuleShape,
+                              }))
+                            }
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="text-xs font-semibold">{shape.label}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">{shape.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Pattern Style */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-medium text-slate-700">Pattern Style</label>
+                      <span className="text-[11px] text-slate-500 font-mono capitalize">
+                        {(customization.patternStyle || "classic-grid").replace("-", " ")}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: "classic-grid", label: "Classic Grid", desc: "Standard grid spacing" },
+                        { id: "dotted-matrix", label: "Dotted Matrix", desc: "Matrix dot treatment" },
+                        { id: "soft-grid", label: "Soft Grid", desc: "Cushioned micro-spacing" },
+                        { id: "connected-flow", label: "Connected / Flow", desc: "Seamless orthogonal links" },
+                        { id: "dense-geometric", label: "Dense Geometric", desc: "Full-bleed solid blocks" },
+                      ].map((pat) => {
+                        const isSelected = (customization.patternStyle || "classic-grid") === pat.id;
+                        return (
+                          <button
+                            key={pat.id}
+                            type="button"
+                            onClick={() =>
+                              setCustomization((prev) => ({
+                                ...prev,
+                                patternStyle: pat.id as QRPatternStyle,
+                              }))
+                            }
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="text-xs font-semibold">{pat.label}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">{pat.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Finder Patterns */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-medium text-slate-700">Finder Patterns</label>
+                      <span className="text-[11px] text-slate-500 font-mono capitalize">
+                        {customization.finderStyle || "square"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: "square", label: "Classic Square", desc: "Standard 7×7 outer & 3×3 square" },
+                        { id: "rounded", label: "Rounded Frame", desc: "Smooth concentric rounded corners" },
+                        { id: "circular", label: "Circular Frame", desc: "Curved border & circular center dot" },
+                      ].map((finder) => {
+                        const isSelected = (customization.finderStyle || "square") === finder.id;
+                        return (
+                          <button
+                            key={finder.id}
+                            type="button"
+                            onClick={() =>
+                              setCustomization((prev) => ({
+                                ...prev,
+                                finderStyle: finder.id as QRFinderStyle,
+                              }))
+                            }
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="text-xs font-semibold">{finder.label}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">{finder.desc}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Standards Notice */}
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">
+                    <span className="font-semibold text-slate-700">Standards-Compliant Geometry:</span> Visual styling applies strictly to data modules. ISO/IEC 18004 functional modules (timing pattern row/column 6 and interior alignment patterns) remain geometrically calibrated to ensure standard decoders achieve 100% clock sync and pitch recovery.
+                  </div>
+                </div>
+              )}
+
+              {/* Group 2: Colors */}
+              {customSection === "colors" && (
                 <div className="space-y-4 pt-1">
                   {/* Curated Presets */}
                   <div>
@@ -1006,7 +1281,7 @@ export const QRWorkspace: React.FC = () => {
                                 bgColor: preset.bg,
                               })
                             }
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all ${
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
                               isSelected
                                 ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
                                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
@@ -1087,7 +1362,226 @@ export const QRWorkspace: React.FC = () => {
                 </div>
               )}
 
-              {/* Group B: Precision */}
+              {/* Group 3: Center Logo & Branding */}
+              {customSection === "logo" && (
+                <div className="space-y-4 pt-1">
+                  {/* Optional Center-Logo Mode Switch */}
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                    <div>
+                      <span className="text-xs font-semibold text-slate-900">Center Logo Overlay</span>
+                      <p className="text-[11px] text-slate-500">Overlay an opaque branded mark centered on the QR module grid</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={customization.logoMode ?? false}
+                      onClick={() =>
+                        setCustomization((prev) => ({
+                          ...prev,
+                          logoMode: !prev.logoMode,
+                          ...(prev.logo && !prev.logoMode ? { errorCorrectionLevel: "H" } : {}),
+                        }))
+                      }
+                      className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        customization.logoMode ? "bg-indigo-600" : "bg-slate-300"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          customization.logoMode ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {!customization.logo ? (
+                    <div className="border border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
+                      <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+                      <p className="text-xs font-medium text-slate-800">
+                        Upload Custom Center Mark
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        PNG, JPEG, WebP, or SVG (Maximum 2MB)
+                      </p>
+                      <label className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors">
+                        <span>Select Image File</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="space-y-3.5">
+                      {/* Active Logo Pill */}
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={customization.logo}
+                              alt="Logo thumbnail"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-900">Custom Logo Active</p>
+                            <p className="text-[11px] text-slate-500">
+                              Error correction set to Level {customization.errorCorrectionLevel}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs font-medium text-slate-700 hover:text-slate-950 cursor-pointer underline">
+                            Change
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                              onChange={handleLogoUpload}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomization((prev) => ({
+                                ...prev,
+                                logo: null,
+                                logoMode: false,
+                              }))
+                            }
+                            className="text-xs font-medium text-rose-600 hover:text-rose-700 cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Logo Size Control */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-medium text-slate-700">Logo Scale</label>
+                          <span className="text-xs font-mono text-slate-500">{customization.logoSize}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={10}
+                          max={28}
+                          step={1}
+                          value={customization.logoSize}
+                          onChange={(e) =>
+                            setCustomization({
+                              ...customization,
+                              logoSize: parseInt(e.target.value, 10),
+                            })
+                          }
+                          className="w-full accent-slate-900 cursor-pointer"
+                        />
+                        {customization.logoSize > 20 && (
+                          <div className="flex items-start gap-1.5 p-2 rounded-md bg-amber-50 border border-amber-200/80 text-amber-800 text-[11px] leading-tight mt-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-600" />
+                            <span>
+                              Scale &gt; 20% increases module occlusion. Level H error correction is strongly recommended to preserve scannability.
+                            </span>
+                          </div>
+                        )}
+                        {customization.errorCorrectionLevel !== "H" && (
+                          <div className="flex items-center justify-between p-2 rounded-md bg-indigo-50 border border-indigo-200/80 text-[11px] text-indigo-950 mt-1.5">
+                            <span>Level {customization.errorCorrectionLevel} active. Level H (30%) is best for logos.</span>
+                            <button
+                              type="button"
+                              onClick={() => setCustomization((prev) => ({ ...prev, errorCorrectionLevel: "H" }))}
+                              className="px-2 py-0.5 rounded font-semibold bg-indigo-600 text-white hover:bg-indigo-700 text-[10px] transition-colors cursor-pointer"
+                            >
+                              Set Level H
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Backing Padding */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                          Protective Backing Padding
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "Compact", value: 8 },
+                            { label: "Standard", value: 14 },
+                            { label: "Relaxed", value: 20 },
+                          ].map((pad) => (
+                            <button
+                              key={pad.value}
+                              type="button"
+                              onClick={() =>
+                                setCustomization({
+                                  ...customization,
+                                  logoPadding: pad.value,
+                                })
+                              }
+                              className={`p-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                                (customization.logoPadding ?? 12) === pad.value
+                                    ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold"
+                                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                              }`}
+                            >
+                              {pad.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Backing Corner Radius */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                          Backing Shape Style
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "Rounded Rect", value: 20 },
+                            { label: "Circle / Pill", value: 50 },
+                            { label: "Sharp Square", value: 6 },
+                          ].map((shape) => (
+                            <button
+                              key={shape.value}
+                              type="button"
+                              onClick={() =>
+                                setCustomization({
+                                  ...customization,
+                                  logoRadius: shape.value,
+                                })
+                              }
+                              className={`p-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                                (customization.logoRadius ?? 20) === shape.value
+                                    ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold"
+                                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                              }`}
+                            >
+                              {shape.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Advisory Notice */}
+                      <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 leading-relaxed">
+                        Logo overlays occlude central modules. UCode aligns the protective backing to the exact QR module grid with zero drop-shadow bleed, using Level {customization.errorCorrectionLevel} Reed-Solomon recovery. Always run the diagnostic test before printing.
+                      </p>
+                    </div>
+                  )}
+
+                  {logoError && (
+                    <p className="text-xs text-rose-500 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{logoError}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Group 4: Precision */}
               {customSection === "precision" && (
                 <div className="space-y-4 pt-1">
                   <div>
@@ -1118,7 +1612,7 @@ export const QRWorkspace: React.FC = () => {
                                 errorCorrectionLevel: lvl,
                               })
                             }
-                            className={`p-2 rounded-lg border text-left transition-all ${
+                            className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
                               isSelected
                                 ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold shadow-2xs"
                                 : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
@@ -1198,175 +1692,6 @@ export const QRWorkspace: React.FC = () => {
                   </div>
                 </div>
               )}
-
-              {/* Group C: Center Logo */}
-              {customSection === "logo" && (
-                <div className="space-y-4 pt-1">
-                  {!customization.logo ? (
-                    <div className="border border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
-                      <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-                      <p className="text-xs font-medium text-slate-800">
-                        Upload Custom Center Mark
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        PNG, JPEG, WebP, or SVG (Maximum 2MB)
-                      </p>
-                      <label className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors">
-                        <span>Select Image File</span>
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                          onChange={handleLogoUpload}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="space-y-3.5">
-                      {/* Active Logo Pill */}
-                      <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/60">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={customization.logo}
-                              alt="Logo thumbnail"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-900">Custom Logo Active</p>
-                            <p className="text-[11px] text-slate-500">
-                              Error correction set to Level {customization.errorCorrectionLevel}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs font-medium text-slate-700 hover:text-slate-950 cursor-pointer underline">
-                            Change
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                              onChange={handleLogoUpload}
-                              className="hidden"
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCustomization((prev) => ({
-                                ...prev,
-                                logo: null,
-                              }))
-                            }
-                            className="text-xs font-medium text-rose-600 hover:text-rose-700"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Logo Size Control */}
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-medium text-slate-700">Logo Scale</label>
-                          <span className="text-xs font-mono text-slate-500">{customization.logoSize}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={12}
-                          max={26}
-                          step={1}
-                          value={customization.logoSize}
-                          onChange={(e) =>
-                            setCustomization({
-                              ...customization,
-                              logoSize: parseInt(e.target.value, 10),
-                            })
-                          }
-                          className="w-full accent-slate-900 cursor-pointer"
-                        />
-                      </div>
-
-                      {/* Backing Padding */}
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                          Protective Backing Padding
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { label: "Compact", value: 8 },
-                            { label: "Standard", value: 14 },
-                            { label: "Relaxed", value: 20 },
-                          ].map((pad) => (
-                            <button
-                              key={pad.value}
-                              type="button"
-                              onClick={() =>
-                                setCustomization({
-                                  ...customization,
-                                  logoPadding: pad.value,
-                                })
-                              }
-                              className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
-                                (customization.logoPadding ?? 12) === pad.value
-                                  ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold"
-                                  : "border-slate-200 text-slate-600 hover:border-slate-300"
-                              }`}
-                            >
-                              {pad.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Backing Corner Radius */}
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                          Backing Shape Style
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { label: "Rounded Rect", value: 20 },
-                            { label: "Circle / Pill", value: 50 },
-                            { label: "Sharp Square", value: 6 },
-                          ].map((shape) => (
-                            <button
-                              key={shape.value}
-                              type="button"
-                              onClick={() =>
-                                setCustomization({
-                                  ...customization,
-                                  logoRadius: shape.value,
-                                })
-                              }
-                              className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
-                                (customization.logoRadius ?? 20) === shape.value
-                                  ? "border-slate-900 bg-slate-50 text-slate-950 font-semibold"
-                                  : "border-slate-200 text-slate-600 hover:border-slate-300"
-                              }`}
-                            >
-                              {shape.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Advisory Notice */}
-                      <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 leading-relaxed">
-                        Logo overlays occlude central modules. UCode uses Level {customization.errorCorrectionLevel} Reed-Solomon recovery and an uncropped proportional fit to maintain optical readability. Always verify with your target camera before printing.
-                      </p>
-                    </div>
-                  )}
-
-                  {logoError && (
-                    <p className="text-xs text-rose-500 flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>{logoError}</span>
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 
@@ -1381,10 +1706,30 @@ export const QRWorkspace: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleRunScanTest}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-100 transition-colors cursor-pointer"
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                    liveDecoderStatus?.tested && !liveDecoderStatus.success
+                      ? "bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100"
+                      : liveDecoderStatus?.success
+                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-100"
+                      : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
+                  }`}
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Optical Score: {scannability.score}/100</span>
+                  {liveDecoderStatus?.tested && !liveDecoderStatus.success ? (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Decode Failed ({scannability.score}/100)</span>
+                    </>
+                  ) : liveDecoderStatus?.success ? (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Score: {scannability.score}/100 • Verified</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Score: {scannability.score}/100</span>
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -1535,42 +1880,42 @@ export const QRWorkspace: React.FC = () => {
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 <h3 id="diagnostic-modal-title" className="text-base font-bold text-slate-900">
-                  Optical Scannability &amp; Print Audit
+                  Optical &amp; Scannability Audit Report
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsTestModalOpen(false)}
                 aria-label="Close diagnostic report"
-                className="p-1 rounded-md text-slate-400 hover:text-slate-600"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Simulated Decoder Verification */}
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Audit Section 1: Independent Software Decoder Validation */}
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700">Camera Decoder Test (jsQR)</span>
+                  <span className="font-semibold text-slate-800">1. Independent Decoder Validation (jsQR)</span>
                   {testResult?.success ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">
                       <CheckCircle2 className="w-3.5 h-3.5" /> 100% Readable
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Optical Failure
+                      <AlertTriangle className="w-3.5 h-3.5" /> Decoder Failure
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-600 leading-relaxed">
                   {testResult?.success
-                    ? "The synthetic camera sensor decoded the raw pixel matrix accurately."
-                    : "The synthetic camera could not resolve the finder patterns. Increase contrast or quiet zone margin."}
+                    ? "Synthetic camera sensor independently sampled and decoded the exact payload from the rendered pixel matrix."
+                    : "The software decoder could not decode the rendered pixel matrix. This indicates module occlusion or contrast issues that exceed Reed-Solomon recovery capacity."}
                 </p>
                 {testResult?.decodedPayload && (
                   <div className="pt-2 border-t border-slate-200/60">
-                    <span className="text-[10px] font-mono uppercase text-slate-400">Decoded String:</span>
+                    <span className="text-[10px] font-mono uppercase text-slate-400">Decoded Payload:</span>
                     <p className="text-[11px] font-mono text-slate-800 break-all bg-white p-2 rounded border border-slate-200 mt-1 max-h-24 overflow-y-auto">
                       {testResult.decodedPayload}
                     </p>
@@ -1578,21 +1923,64 @@ export const QRWorkspace: React.FC = () => {
                 )}
               </div>
 
-              {/* Scannability Breakdown */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <span className="text-slate-500 text-[11px]">Contrast Ratio</span>
-                  <p className="text-base font-bold text-slate-900 mt-0.5">{scannability.contrastRatio}:1</p>
-                  <p className="text-[11px] text-emerald-600 font-medium capitalize mt-0.5">{scannability.contrastGrade}</p>
-                </div>
+              {/* Audit Section 2: Geometric & Optical Quality */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-800">2. Optical &amp; Geometric Quality</span>
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span className="text-slate-500 text-[11px]">Contrast Ratio</span>
+                    <p className="text-base font-bold text-slate-900 mt-0.5">{scannability.contrastRatio}:1</p>
+                    <p className="text-[11px] text-emerald-600 font-medium capitalize mt-0.5">{scannability.contrastGrade} (WCAG 2.1)</p>
+                  </div>
 
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <span className="text-slate-500 text-[11px]">Quiet Zone (Margin)</span>
-                  <p className="text-base font-bold text-slate-900 mt-0.5">{customization.margin} modules</p>
-                  <p className={`text-[11px] font-medium mt-0.5 ${scannability.quietZoneSafe ? "text-emerald-600" : "text-amber-600"}`}>
-                    {scannability.quietZoneSafe ? "ISO 18004 Compliant" : "Narrow Margin"}
-                  </p>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span className="text-slate-500 text-[11px]">Quiet Zone Margin</span>
+                    <p className="text-base font-bold text-slate-900 mt-0.5">{customization.margin} modules</p>
+                    <p className={`text-[11px] font-medium mt-0.5 ${scannability.quietZoneSafe ? "text-emerald-600" : "text-amber-600"}`}>
+                      {scannability.quietZoneSafe ? "ISO/IEC 18004 Safe" : "Narrow Margin"}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span className="text-slate-500 text-[11px]">Error Correction</span>
+                    <p className="text-base font-bold text-slate-900 mt-0.5">Level {customization.errorCorrectionLevel}</p>
+                    <p className="text-[11px] text-slate-600 font-medium mt-0.5">
+                      {customization.errorCorrectionLevel === "H" ? "30% Recovery (Logos)" :
+                       customization.errorCorrectionLevel === "Q" ? "25% Recovery" :
+                       customization.errorCorrectionLevel === "M" ? "15% Recovery" : "7% Recovery"}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span className="text-slate-500 text-[11px]">Logo Overlay Safety</span>
+                    <p className="text-base font-bold text-slate-900 mt-0.5">
+                      {customization.logo && customization.logoMode !== false ? `${customization.logoSize}% Scale` : "Disabled"}
+                    </p>
+                    <p className={`text-[11px] font-medium mt-0.5 ${scannability.logoSafe ? "text-emerald-600" : "text-amber-600"}`}>
+                      {!customization.logo || customization.logoMode === false ? "Unoccluded Grid" : scannability.logoSafe ? "Within Safe Headroom" : "High Occlusion Risk"}
+                    </p>
+                  </div>
+
+                  <div className="col-span-2 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-500 text-[11px]">Style Studio Profile</span>
+                      <p className="text-xs font-bold text-slate-900 mt-0.5 capitalize">
+                        {(customization.moduleShape || "square").replace("-", " ")} &bull; {(customization.patternStyle || "classic-grid").replace("-", " ")} &bull; {customization.finderStyle || "square"} finders
+                      </p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                      Functional Patterns Preserved
+                    </span>
+                  </div>
                 </div>
+              </div>
+
+              {/* Audit Section 3: Physical Camera Scan Reliability Advisory */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                <span className="text-xs font-semibold text-slate-800">3. Physical Scan &amp; Print Advisory</span>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Software decoding verifies visual syntax and Reed-Solomon defect recovery. However, real-world camera scans depend on physical factors—including ambient illumination, print substrate reflectance, lamination glare, and camera focal distance (10:1 ratio). Always test printed proofs with your target phone camera.
+                </p>
               </div>
             </div>
 
@@ -1600,9 +1988,9 @@ export const QRWorkspace: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsTestModalOpen(false)}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                Close Report
+                Close Audit
               </button>
             </div>
           </div>

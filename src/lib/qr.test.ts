@@ -20,7 +20,11 @@ import {
   evaluateScannability,
   calculatePrintSize,
 } from "./qr-validator";
-import { generateQRSVG } from "./qr-generator";
+import {
+  generateQRSVG,
+  renderQRToBuffer,
+  calculateLogoModuleDimensions,
+} from "./qr-generator";
 import { QRCustomizationOptions } from "@/types/qr";
 
 /**
@@ -471,10 +475,526 @@ describe("Synthetic Decoder Visual Round-Trip Verification (jsQR on Pixel Matrix
     },
   ];
 
-  for (const { type, payload } of testPayloads) {
-    it(`round-trip decodes generated visual pixel matrix for format: ${type}`, () => {
-      const decoded = decodeMatrixWithJsQR(payload);
-      expect(decoded).toBe(payload);
+    for (const { type, payload } of testPayloads) {
+      it(`round-trip decodes generated visual pixel matrix for format: ${type}`, () => {
+        const decoded = decodeMatrixWithJsQR(payload);
+        expect(decoded).toBe(payload);
+      });
+    }
+  });
+
+  describe("Module Grid Logo Dimensioning & Boundary Guarantees", () => {
+    it("snaps logo box to an odd integer of modules centered on middle module", () => {
+      // For Version 2 (25x25), center is module 12
+      const v2_18 = calculateLogoModuleDimensions(25, 18);
+      expect(v2_18.boxModules % 2).toBe(1); // odd integer
+      expect(v2_18.startModule).toBe((25 - 1) / 2 - (v2_18.boxModules - 1) / 2);
+      expect(v2_18.isSafe).toBe(true);
+
+      // For Version 7 (45x45), center is module 22
+      const v7_18 = calculateLogoModuleDimensions(45, 18);
+      expect(v7_18.boxModules % 2).toBe(1);
+      expect(v7_18.startModule).toBe((45 - 1) / 2 - (v7_18.boxModules - 1) / 2);
+      expect(v7_18.isSafe).toBe(true);
     });
-  }
-});
+
+    it("strictly guarantees finder patterns and timing patterns are never occluded", () => {
+      // Test across all common QR versions (21 to 101 modules)
+      for (const size of [21, 25, 29, 33, 45, 57, 77, 93, 101]) {
+        const dim = calculateLogoModuleDimensions(size, 30); // max requested
+        // Finder patterns and separators span 0..7 and (size-8)..(size-1)
+        // Timing pattern runs at row/col 6
+        expect(dim.startModule).toBeGreaterThanOrEqual(7);
+        expect(dim.startModule + dim.boxModules).toBeLessThanOrEqual(size - 7);
+        expect(dim.boxModules).toBeLessThanOrEqual(dim.maxSafeModules);
+      }
+    });
+  });
+
+  describe("Automated Decoder Regression Gate (jsQR on Final Rasterized Buffers)", () => {
+    const testUrl = "https://ucreates.io";
+
+    it("1. Plain URL QR generation and independent decoding at 2048px", () => {
+      const rendered = renderQRToBuffer(testUrl, {
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 2048,
+        logo: null,
+        logoSize: 18,
+      }, 2048);
+
+      const code = jsQR(rendered.data, rendered.width, rendered.height, { inversionAttempts: "attemptBoth" });
+      expect(code).not.toBeNull();
+      expect(code?.data).toBe(testUrl);
+    });
+
+    it("2. URL QR with small logo (12%) and protective backing plate", () => {
+      const rendered = renderQRToBuffer(testUrl, {
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 2048,
+        logo: "data:image/svg+xml;base64,sample",
+        logoSize: 12,
+      }, 2048);
+
+      const code = jsQR(rendered.data, rendered.width, rendered.height, { inversionAttempts: "attemptBoth" });
+      expect(code).not.toBeNull();
+      expect(code?.data).toBe(testUrl);
+    });
+
+    it("3. URL QR with default logo configuration (18% scale, Level H)", () => {
+      const rendered = renderQRToBuffer(testUrl, {
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 2048,
+        logo: "data:image/svg+xml;base64,sample",
+        logoSize: 18,
+      }, 2048);
+
+      const code = jsQR(rendered.data, rendered.width, rendered.height, { inversionAttempts: "attemptBoth" });
+      expect(code).not.toBeNull();
+      expect(code?.data).toBe(testUrl);
+    });
+
+    it("4. URL QR with large logo (>24%) triggers scannability warning and recovery bounds", () => {
+      // Under Level Q, large logo (26%) leaves minimal headroom
+      const reportQ = evaluateScannability({
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "Q",
+        margin: 4,
+        size: 2048,
+        logo: "data:image/svg+xml;base64,sample",
+        logoSize: 26,
+      });
+      expect(reportQ.logoSafe).toBe(false);
+      expect(reportQ.logoWarning).toContain("exceeds safe headroom");
+
+      // When decoder validation fails, score is penalized honestly
+      const failedReport = evaluateScannability({
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "M",
+        margin: 4,
+        size: 2048,
+        logo: "data:image/svg+xml;base64,sample",
+        logoSize: 28,
+      }, { tested: true, success: false });
+      expect(failedReport.score).toBeLessThanOrEqual(30);
+      expect(failedReport.recommendations[0]).toContain("Software Decoder Validation FAILED");
+    });
+
+    it("5. PNG export raster validation at 512, 1024, 2048, and 4096 pixels", () => {
+      const resolutions = [512, 1024, 2048, 4096];
+      for (const res of resolutions) {
+        const rendered = renderQRToBuffer(testUrl, {
+          fgColor: "#0f172a",
+          bgColor: "#ffffff",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: res,
+          logo: "data:image/svg+xml;base64,sample",
+          logoSize: 18,
+        }, res);
+
+        expect(rendered.width).toBe(res);
+        expect(rendered.height).toBe(res);
+        expect(rendered.data.length).toBe(res * res * 4);
+
+        const code = jsQR(rendered.data, res, res, { inversionAttempts: "attemptBoth" });
+        expect(code).not.toBeNull();
+        expect(code?.data).toBe(testUrl);
+      }
+    });
+
+    it("6. Standards-compliant SVG export structure and module coordinate fidelity", async () => {
+      const svg = await generateQRSVG(testUrl, {
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 1024,
+        logo: "data:image/svg+xml;base64,sample",
+        logoSize: 18,
+        logoPadding: 14,
+        logoRadius: 20,
+      });
+
+      expect(svg).toContain("<svg");
+      expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"');
+      expect(svg).toContain('xmlns:xlink="http://www.w3.org/1999/xlink"');
+      expect(svg).toContain('<g id="ucode-center-logo">');
+      // Ensure rect and image elements exist with valid module-space coordinates
+      expect(svg).toMatch(/<rect\s+x="[\d.]+"\s+y="[\d.]+"\s+width="[\d.]+"\s+height="[\d.]+"/);
+      expect(svg).toMatch(/<image\s+x="[\d.]+"\s+y="[\d.]+"\s+width="[\d.]+"\s+height="[\d.]+"/);
+      expect(svg).toContain('preserveAspectRatio="xMidYMid meet"');
+    });
+
+    it("7. Foreground/background contrast calculation and ISO 18004 quiet zone behavior", () => {
+      // ISO 18004 requires 4-module quiet zone
+      const compliantReport = evaluateScannability({
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 512,
+        logo: null,
+        logoSize: 18,
+      });
+      expect(compliantReport.quietZoneSafe).toBe(true);
+      expect(compliantReport.contrastRatio).toBeGreaterThanOrEqual(20);
+      expect(compliantReport.contrastGrade).toBe("excellent");
+
+      // Narrow quiet zone (<4 modules)
+      const narrowReport = evaluateScannability({
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 2,
+        size: 512,
+        logo: null,
+        logoSize: 18,
+      });
+      expect(narrowReport.quietZoneSafe).toBe(false);
+      expect(narrowReport.recommendations.some(r => r.includes("Narrow margin"))).toBe(true);
+    });
+
+    it("8. Exact payload preservation across all 10 formats through styling and export paths", () => {
+      const allFormats = [
+        { name: "URL", payload: "https://ucreates.io/solutions" },
+        { name: "Text", payload: "UCode High-Precision Verification 2026." },
+        { name: "Wi-Fi", payload: "WIFI:S:UCreates-Secure;T:WPA;P:HighSec#2026;;;" },
+        { name: "WhatsApp", payload: "https://wa.me/15550192834?text=Hello" },
+        {
+          name: "vCard",
+          payload:
+            "BEGIN:VCARD\nVERSION:3.0\nN:Alex;Morgan;;;\nFN:Alex Morgan\nORG:UCreates\nTEL;TYPE=CELL:+15550192834\nEMAIL:alex@ucreates.io\nEND:VCARD",
+        },
+        { name: "Email", payload: "mailto:hello@ucreates.io?subject=Lead" },
+        { name: "Phone", payload: "tel:+15550192834" },
+        { name: "SMS", payload: "sms:+15550192834?body=Test" },
+        { name: "Geo", payload: "https://www.google.com/maps/search/?api=1&query=37.7749%2C-122.4194" },
+        {
+          name: "Event",
+          payload:
+            "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Launch\nDTSTART:20261101T090000Z\nEND:VEVENT\nEND:VCALENDAR",
+        },
+      ];
+
+      for (const item of allFormats) {
+        const rendered = renderQRToBuffer(item.payload, {
+          fgColor: "#0f172a",
+          bgColor: "#ffffff",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: 1024,
+          logo: "data:image/svg+xml;base64,sample",
+          logoSize: 18,
+        }, 1024);
+
+        const code = jsQR(rendered.data, rendered.width, rendered.height, { inversionAttempts: "attemptBoth" });
+        expect(code, `Failed decoding format: ${item.name}`).not.toBeNull();
+        expect(code?.data).toBe(item.payload);
+      }
+    });
+
+    it("9. Long payloads and higher QR versions requiring alignment patterns", () => {
+      const longPayloads = [
+        {
+          name: "Long URL (QR Version 12, 65x65 modules)",
+          payload: "https://ucreates.io/work/enterprise-digital-solutions-portfolio-case-studies-2026?source=qr-code&campaign=global-launch&medium=print-magazine-q4",
+        },
+        {
+          name: "Full vCard 3.0 (QR Version 19, 93x93 modules)",
+          payload:
+            "BEGIN:VCARD\nVERSION:3.0\nN:Morgan;Alex;;;\nFN:Alex Morgan\nORG:UCreates Digital Solutions Studio\nTITLE:Chief Technology Architect\nTEL;TYPE=CELL,VOICE:+15550192834\nEMAIL:alex@ucreates.io\nURL:https://ucreates.io\nADR:;;100 Montgomery St;San Francisco;CA;94104;USA\nNOTE:Full vCard contact card generated via UCode platform.\nEND:VCARD",
+        },
+        {
+          name: "Complex Event (QR Version 21, 101x101 modules)",
+          payload:
+            "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//UCreates//UCode 2026//EN\nBEGIN:VEVENT\nUID:ucode-summit-2026\nDTSTAMP:20261023T050000Z\nDTSTART:20261115T090000Z\nDTEND:20261115T180000Z\nSUMMARY:Global Engineering & QR Architecture Summit 2026\nLOCATION:Moscone Center West, San Francisco, CA\nDESCRIPTION:Keynote address on privacy-first client-side web applications and prepress optical engineering.\nEND:VEVENT\nEND:VCALENDAR",
+        },
+      ];
+
+      for (const item of longPayloads) {
+        // Test without logo
+        const plain = renderQRToBuffer(item.payload, {
+          fgColor: "#000000",
+          bgColor: "#ffffff",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: 2048,
+          logo: null,
+          logoSize: 18,
+        }, 2048);
+        const codePlain = jsQR(plain.data, 2048, 2048, { inversionAttempts: "attemptBoth" });
+        expect(codePlain, `Failed decoding plain: ${item.name}`).not.toBeNull();
+        expect(codePlain?.data).toBe(item.payload);
+
+        // Test with logo overlay
+        const withLogo = renderQRToBuffer(item.payload, {
+          fgColor: "#000000",
+          bgColor: "#ffffff",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: 2048,
+          logo: "data:image/svg+xml;base64,sample",
+          logoSize: 18,
+          logoMode: true,
+        }, 2048);
+        const codeLogo = jsQR(withLogo.data, 2048, 2048, { inversionAttempts: "attemptBoth" });
+        expect(codeLogo, `Failed decoding with logo: ${item.name}`).not.toBeNull();
+        expect(codeLogo?.data).toBe(item.payload);
+      }
+    });
+  });
+
+  describe("Style Studio — Shape, Pattern, Finder, and Combination Decoding Suite", () => {
+    const testUrl = "https://ucreates.io";
+
+    it("1. Decodes all 5 individual module shapes with independent decoder (jsQR)", () => {
+      const shapes: ("square" | "rounded-square" | "bubble" | "soft-pixel" | "diamond")[] = [
+        "square",
+        "rounded-square",
+        "bubble",
+        "soft-pixel",
+        "diamond",
+      ];
+
+      for (const shape of shapes) {
+        const rendered = renderQRToBuffer(testUrl, {
+          fgColor: "#000000",
+          bgColor: "#ffffff",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: 1024,
+          moduleShape: shape,
+          patternStyle: "classic-grid",
+          finderStyle: "square",
+          logo: null,
+          logoSize: 18,
+        }, 1024);
+
+        const code = jsQR(rendered.data, 1024, 1024, { inversionAttempts: "attemptBoth" });
+        expect(code, `Failed decoding module shape: ${shape}`).not.toBeNull();
+        expect(code?.data).toBe(testUrl);
+      }
+    });
+
+    it("2. Decodes all 3 finder pattern styles with independent decoder (jsQR)", () => {
+      const finders: ("square" | "rounded" | "circular")[] = [
+        "square",
+        "rounded",
+        "circular",
+      ];
+
+      for (const finder of finders) {
+        const rendered = renderQRToBuffer(testUrl, {
+          fgColor: "#0f172a",
+          bgColor: "#f8fafc",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: 1024,
+          moduleShape: "square",
+          patternStyle: "classic-grid",
+          finderStyle: finder,
+          logo: null,
+          logoSize: 18,
+        }, 1024);
+
+        const code = jsQR(rendered.data, 1024, 1024, { inversionAttempts: "attemptBoth" });
+        expect(code, `Failed decoding finder style: ${finder}`).not.toBeNull();
+        expect(code?.data).toBe(testUrl);
+      }
+    });
+
+    it("3. Decodes all 5 pattern styles with independent decoder (jsQR)", () => {
+      const patterns: ("classic-grid" | "dotted-matrix" | "soft-grid" | "connected-flow" | "dense-geometric")[] = [
+        "classic-grid",
+        "dotted-matrix",
+        "soft-grid",
+        "connected-flow",
+        "dense-geometric",
+      ];
+
+      for (const pattern of patterns) {
+        const rendered = renderQRToBuffer(testUrl, {
+          fgColor: "#0f172a",
+          bgColor: "#ffffff",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: 1024,
+          moduleShape: "square",
+          patternStyle: pattern,
+          finderStyle: "square",
+          logo: null,
+          logoSize: 18,
+        }, 1024);
+
+        const code = jsQR(rendered.data, 1024, 1024, { inversionAttempts: "attemptBoth" });
+        expect(code, `Failed decoding pattern style: ${pattern}`).not.toBeNull();
+        expect(code?.data).toBe(testUrl);
+      }
+    });
+
+    it("4. Decodes representative styled combinations with and without center logos", () => {
+      const combinations = [
+        {
+          name: "Modern Flow + Rounded Finders + Logo",
+          moduleShape: "rounded-square" as const,
+          patternStyle: "connected-flow" as const,
+          finderStyle: "rounded" as const,
+          logo: "data:image/svg+xml;base64,sample",
+          logoMode: true,
+        },
+        {
+          name: "Cyber Dots + Circular Finders + Logo",
+          moduleShape: "bubble" as const,
+          patternStyle: "dotted-matrix" as const,
+          finderStyle: "circular" as const,
+          logo: "data:image/svg+xml;base64,sample",
+          logoMode: true,
+        },
+        {
+          name: "Soft Tech + Rounded Finders",
+          moduleShape: "soft-pixel" as const,
+          patternStyle: "soft-grid" as const,
+          finderStyle: "rounded" as const,
+          logo: null,
+          logoMode: false,
+        },
+        {
+          name: "Luxe Diamond + Square Finders + Logo",
+          moduleShape: "diamond" as const,
+          patternStyle: "classic-grid" as const,
+          finderStyle: "square" as const,
+          logo: "data:image/svg+xml;base64,sample",
+          logoMode: true,
+        },
+        {
+          name: "Dense Geometric + Circular Finders",
+          moduleShape: "square" as const,
+          patternStyle: "dense-geometric" as const,
+          finderStyle: "circular" as const,
+          logo: null,
+          logoMode: false,
+        },
+      ];
+
+      for (const combo of combinations) {
+        const rendered = renderQRToBuffer(testUrl, {
+          fgColor: "#0f172a",
+          bgColor: "#ffffff",
+          errorCorrectionLevel: "H",
+          margin: 4,
+          size: 1024,
+          moduleShape: combo.moduleShape,
+          patternStyle: combo.patternStyle,
+          finderStyle: combo.finderStyle,
+          logo: combo.logo,
+          logoMode: combo.logoMode,
+          logoSize: 18,
+        }, 1024);
+
+        const code = jsQR(rendered.data, 1024, 1024, { inversionAttempts: "attemptBoth" });
+        expect(code, `Failed decoding combination: ${combo.name}`).not.toBeNull();
+        expect(code?.data).toBe(testUrl);
+      }
+    });
+
+    it("5. Verifies SVG export structure across module shapes and finder styles", async () => {
+      // Test bubble dots with circular finders
+      const bubbleSvg = await generateQRSVG(testUrl, {
+        fgColor: "#0f172a",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 512,
+        moduleShape: "bubble",
+        patternStyle: "dotted-matrix",
+        finderStyle: "circular",
+        logo: null,
+        logoSize: 18,
+      });
+      expect(bubbleSvg).toContain("<circle");
+      expect(bubbleSvg).toContain('rx="2.8"'); // circular finder frame
+
+      // Test diamond facets
+      const diamondSvg = await generateQRSVG(testUrl, {
+        fgColor: "#881337",
+        bgColor: "#fff1f2",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 512,
+        moduleShape: "diamond",
+        patternStyle: "classic-grid",
+        finderStyle: "square",
+        logo: null,
+        logoSize: 18,
+      });
+      expect(diamondSvg).toContain("<polygon points=");
+
+      // Test connected flow with center logo
+      const flowSvg = await generateQRSVG(testUrl, {
+        fgColor: "#0f172a",
+        bgColor: "#f8fafc",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 512,
+        moduleShape: "rounded-square",
+        patternStyle: "connected-flow",
+        finderStyle: "rounded",
+        logo: "data:image/svg+xml;base64,sample",
+        logoMode: true,
+        logoSize: 18,
+      });
+      expect(flowSvg).toContain('<g id="ucode-center-logo">');
+      expect(flowSvg).toContain('rx="1.5"'); // rounded finder frame
+    });
+
+    it("6. Decodes styled QR codes on higher versions with alignment patterns (Version 12 & 19)", () => {
+      const v12Payload = "https://ucreates.io/work/enterprise-digital-solutions-portfolio-case-studies-2026?source=qr-code&campaign=global-launch";
+
+      // Test Connected Flow on Version 12
+      const renderedFlow = renderQRToBuffer(v12Payload, {
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 2048,
+        moduleShape: "rounded-square",
+        patternStyle: "connected-flow",
+        finderStyle: "rounded",
+        logo: null,
+        logoSize: 18,
+      }, 2048);
+      const codeFlow = jsQR(renderedFlow.data, 2048, 2048, { inversionAttempts: "attemptBoth" });
+      expect(codeFlow, "Failed decoding V12 Connected Flow").not.toBeNull();
+      expect(codeFlow?.data).toBe(v12Payload);
+
+      // Test Bubble Matrix on Version 12
+      const renderedDots = renderQRToBuffer(v12Payload, {
+        fgColor: "#000000",
+        bgColor: "#ffffff",
+        errorCorrectionLevel: "H",
+        margin: 4,
+        size: 2048,
+        moduleShape: "bubble",
+        patternStyle: "dotted-matrix",
+        finderStyle: "circular",
+        logo: null,
+        logoSize: 18,
+      }, 2048);
+      const codeDots = jsQR(renderedDots.data, 2048, 2048, { inversionAttempts: "attemptBoth" });
+      expect(codeDots, "Failed decoding V12 Bubble Dots").not.toBeNull();
+      expect(codeDots?.data).toBe(v12Payload);
+    });
+  });
+
+

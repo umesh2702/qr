@@ -89,16 +89,52 @@ export type QRFormDataMap = {
 
 export type ErrorCorrectionLevel = "L" | "M" | "Q" | "H";
 
+export type QRModuleShape =
+  | "square"
+  | "rounded-square"
+  | "bubble"
+  | "soft-pixel"
+  | "diamond";
+
+export type QRPatternStyle =
+  | "classic-grid"
+  | "dotted-matrix"
+  | "soft-grid"
+  | "connected-flow"
+  | "dense-geometric";
+
+export type QRFinderStyle =
+  | "square"
+  | "rounded"
+  | "circular";
+
 export interface QRCustomizationOptions {
   fgColor: string;
   bgColor: string;
   errorCorrectionLevel: ErrorCorrectionLevel;
   margin: number;
   size: number;
+  // Style Studio
+  moduleShape?: QRModuleShape;
+  patternStyle?: QRPatternStyle;
+  finderStyle?: QRFinderStyle;
+  // Logo and Branding
   logo: string | null;
   logoSize: number; // percentage 10 - 28
   logoPadding?: number; // internal padding percentage (6 - 24)
   logoRadius?: number; // corner radius percentage (0 = sharp, 20 = rounded, 50 = circle)
+  logoMode?: boolean; // toggle center-logo mode
+}
+
+export interface StylePreset {
+  id: string;
+  name: string;
+  description: string;
+  moduleShape: QRModuleShape;
+  patternStyle: QRPatternStyle;
+  finderStyle: QRFinderStyle;
+  fgColor: string;
+  bgColor: string;
 }
 
 export interface ColorPreset {
@@ -114,10 +150,13 @@ export interface ValidationResult {
 }
 
 export interface ScannabilityReport {
-  score: number; // 0 - 100
+  score: number; // Optical / geometric quality score (0 - 100)
   contrastRatio: number;
   contrastGrade: "excellent" | "acceptable" | "poor";
   quietZoneSafe: boolean;
   logoSafe: boolean;
+  logoWarning?: string | null;
+  styleWarning?: string | null;
+  decoderVerified?: boolean;
   recommendations: string[];
 }
