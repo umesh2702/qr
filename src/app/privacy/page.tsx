@@ -3,13 +3,21 @@ import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | UCode — Privacy-First QR Generation",
+  title: "Privacy Policy",
   description:
     "UCode's transparent privacy policy. Learn how all QR code encoding occurs directly inside your web browser without storing passwords, URLs, or personal data.",
   alternates: {
-    canonical: "https://ucode.app/privacy",
+    canonical: getAbsoluteUrl("/privacy"),
+  },
+  openGraph: {
+    title: "Privacy Policy | UCode",
+    description:
+      "UCode's transparent privacy policy. Learn how all QR code encoding occurs directly inside your web browser without storing passwords, URLs, or personal data.",
+    url: getAbsoluteUrl("/privacy"),
+    type: "website",
   },
 };
 

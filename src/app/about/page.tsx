@@ -3,13 +3,21 @@ import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { UcreatesBanner } from "@/components/UcreatesBanner";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "About UCode | The Free, Privacy-First QR Platform",
+  title: "About UCode — Free, Privacy-First QR Platform",
   description:
     "Learn why UCode was created by UCreates to eliminate predatory QR code subscriptions, protect user privacy with client-side generation, and provide honest free tools.",
   alternates: {
-    canonical: "https://ucode.app/about",
+    canonical: getAbsoluteUrl("/about"),
+  },
+  openGraph: {
+    title: "About UCode — Free, Privacy-First QR Platform",
+    description:
+      "Learn why UCode was created by UCreates to eliminate predatory QR code subscriptions, protect user privacy with client-side generation, and provide honest free tools.",
+    url: getAbsoluteUrl("/about"),
+    type: "website",
   },
 };
 

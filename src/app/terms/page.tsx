@@ -2,13 +2,21 @@ import React from "react";
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "Terms of Use | UCode — Free QR Code Generator",
+  title: "Terms of Use",
   description:
     "Terms of service for UCode. Learn about your rights to use generated QR codes for personal and commercial applications without royalties or fees.",
   alternates: {
-    canonical: "https://ucode.app/terms",
+    canonical: getAbsoluteUrl("/terms"),
+  },
+  openGraph: {
+    title: "Terms of Use | UCode",
+    description:
+      "Terms of service for UCode. Learn about your rights to use generated QR codes for personal and commercial applications without royalties or fees.",
+    url: getAbsoluteUrl("/terms"),
+    type: "website",
   },
 };
 

@@ -15,19 +15,24 @@ import { QRWorkspace } from "@/components/QRWorkspace";
 import { AdBanner } from "@/components/AdBanner";
 import { UcreatesBanner } from "@/components/UcreatesBanner";
 import { ARTICLES } from "@/lib/articles";
+import { getBaseUrl } from "@/lib/site-url";
+
+const baseUrl = getBaseUrl();
 
 export const metadata: Metadata = {
-  title: "UCode — Free, Privacy-First QR Code Generator | No Expiry, No Signup",
+  title: {
+    absolute: "UCode — Free, Privacy-First QR Code Generator | No Expiry, No Signup",
+  },
   description:
     "Generate permanent, high-resolution static QR codes for websites, Wi-Fi, vCard, WhatsApp, and email directly in your browser. Vector SVG and Ultra-HD 4096px PNG downloads with zero watermarks.",
   alternates: {
-    canonical: "https://ucode.app",
+    canonical: baseUrl,
   },
   openGraph: {
     title: "UCode — Free, Privacy-First QR Code Generator",
     description:
       "Permanent static QR codes generated client-side. No signups, no expiring trials, no redirected links. Download pure SVG and Ultra-HD PNG.",
-    url: "https://ucode.app",
+    url: baseUrl,
     siteName: "UCode by UCreates",
     type: "website",
   },
@@ -40,6 +45,7 @@ export default function HomePage() {
     name: "UCode",
     applicationCategory: "DesignApplication",
     operatingSystem: "All",
+    url: baseUrl,
     offers: {
       "@type": "Offer",
       price: "0",

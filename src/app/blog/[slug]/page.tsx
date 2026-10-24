@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { AdBanner } from "@/components/AdBanner";
 import { UcreatesBanner } from "@/components/UcreatesBanner";
 import { ARTICLES } from "@/lib/articles";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -25,23 +26,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!article) {
     return {
-      title: "Article Not Found | UCode Blog",
+      title: "Article Not Found",
     };
   }
 
+  const postUrl = getAbsoluteUrl(`/blog/${article.slug}`);
+
   return {
-    title: `${article.title} | UCode Research`,
+    title: article.title,
     description: article.summary,
     alternates: {
-      canonical: `https://ucode.app/blog/${article.slug}`,
+      canonical: postUrl,
     },
     openGraph: {
       title: article.title,
       description: article.summary,
-      url: `https://ucode.app/blog/${article.slug}`,
+      url: postUrl,
       type: "article",
       publishedTime: article.publishedAt,
       authors: ["UCode Technical Research Team"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: article.summary,
     },
   };
 }
@@ -169,11 +177,18 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  const postUrl = getAbsoluteUrl(`/blog/${article.slug}`);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": postUrl,
+    },
     headline: article.title,
     description: article.summary,
+    url: postUrl,
     datePublished: article.publishedAt,
     author: {
       "@type": "Organization",

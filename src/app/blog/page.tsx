@@ -6,13 +6,21 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AdBanner } from "@/components/AdBanner";
 import { ARTICLES, CONTENT_ROADMAP_BRIEFS } from "@/lib/articles";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "QR Code Guides, Best Practices & Research | UCode Blog",
+  title: "QR Code Guides, Prepress Standards & Research Library",
   description:
     "Practical, evidence-based guides on QR code generation, print sizing calculations, error correction standards, restaurant digital menus, and Wi-Fi security.",
   alternates: {
-    canonical: "https://ucode.app/blog",
+    canonical: getAbsoluteUrl("/blog"),
+  },
+  openGraph: {
+    title: "QR Code Guides, Prepress Standards & Research Library | UCode",
+    description:
+      "Practical, evidence-based guides on QR code generation, print sizing calculations, error correction standards, restaurant digital menus, and Wi-Fi security.",
+    url: getAbsoluteUrl("/blog"),
+    type: "website",
   },
 };
 

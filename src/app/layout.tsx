@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { getBaseUrl } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,10 +19,12 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const baseUrl = getBaseUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ucode.app"),
+  metadataBase: new URL(baseUrl),
   title: {
-    default: "UCode — Free, Privacy-First QR Code Generator",
+    default: "UCode — Free, Privacy-First QR Code Generator | No Expiry, No Signup",
     template: "%s | UCode",
   },
   description:
@@ -45,11 +48,29 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
     title: "UCode — Free, Privacy-First QR Code Generator",
     description:
       "Permanent static QR codes generated client-side. No signups, no expiring trials, no redirected links. Download pure SVG and Ultra-HD PNG.",
-    url: "https://ucode.app",
+    url: baseUrl,
     siteName: "UCode by UCreates",
     locale: "en_US",
     type: "website",

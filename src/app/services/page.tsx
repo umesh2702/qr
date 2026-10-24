@@ -13,13 +13,21 @@ import {
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "UCreates Digital Solutions | Web Development, UI/UX & Mobile Products",
+  title: "UCreates Digital Solutions — Web Development & UI/UX Studio",
   description:
     "UCreates crafts high-converting digital products, custom web applications, responsive dining menus, and mobile experiences. The digital studio behind UCode.",
   alternates: {
-    canonical: "https://ucode.app/services",
+    canonical: getAbsoluteUrl("/services"),
+  },
+  openGraph: {
+    title: "UCreates Digital Solutions — Web Development & UI/UX Studio",
+    description:
+      "UCreates crafts high-converting digital products, custom web applications, responsive dining menus, and mobile experiences. The digital studio behind UCode.",
+    url: getAbsoluteUrl("/services"),
+    type: "website",
   },
 };
 

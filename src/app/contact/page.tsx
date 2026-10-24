@@ -4,13 +4,21 @@ import { Mail, Clock, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "Contact UCode & UCreates | Enquiries, Feedback & Custom Engineering",
+  title: "Contact UCode & UCreates — Project Enquiries & Engineering",
   description:
     "Have a question about UCode or need custom web and mobile engineering from UCreates? Get in touch with our engineering team.",
   alternates: {
-    canonical: "https://ucode.app/contact",
+    canonical: getAbsoluteUrl("/contact"),
+  },
+  openGraph: {
+    title: "Contact UCode & UCreates — Project Enquiries & Engineering",
+    description:
+      "Have a question about UCode or need custom web and mobile engineering from UCreates? Get in touch with our engineering team.",
+    url: getAbsoluteUrl("/contact"),
+    type: "website",
   },
 };
 
