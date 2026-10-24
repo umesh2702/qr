@@ -28,6 +28,21 @@ export const metadata: Metadata = {
       "UCreates crafts high-converting digital products, custom web applications, responsive dining menus, and mobile experiences. The digital studio behind UCode.",
     url: getAbsoluteUrl("/services"),
     type: "website",
+    images: [
+      {
+        url: getAbsoluteUrl("/og-image.png"),
+        width: 1200,
+        height: 630,
+        alt: "UCreates Digital Solutions — Web Development & UI/UX Studio",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "UCreates Digital Solutions — Web Development & UI/UX Studio",
+    description:
+      "UCreates crafts high-converting digital products, custom web applications, responsive dining menus, and mobile experiences. The digital studio behind UCode.",
+    images: [getAbsoluteUrl("/og-image.png")],
   },
 };
 

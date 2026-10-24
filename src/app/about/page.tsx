@@ -18,6 +18,21 @@ export const metadata: Metadata = {
       "Learn why UCode was created by UCreates to eliminate predatory QR code subscriptions, protect user privacy with client-side generation, and provide honest free tools.",
     url: getAbsoluteUrl("/about"),
     type: "website",
+    images: [
+      {
+        url: getAbsoluteUrl("/og-image.png"),
+        width: 1200,
+        height: 630,
+        alt: "About UCode — Free, Privacy-First QR Platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About UCode — Free, Privacy-First QR Platform",
+    description:
+      "Learn why UCode was created by UCreates to eliminate predatory QR code subscriptions, protect user privacy with client-side generation, and provide honest free tools.",
+    images: [getAbsoluteUrl("/og-image.png")],
   },
 };
 

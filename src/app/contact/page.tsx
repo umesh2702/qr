@@ -19,6 +19,21 @@ export const metadata: Metadata = {
       "Have a question about UCode or need custom web and mobile engineering from UCreates? Get in touch with our engineering team.",
     url: getAbsoluteUrl("/contact"),
     type: "website",
+    images: [
+      {
+        url: getAbsoluteUrl("/og-image.png"),
+        width: 1200,
+        height: 630,
+        alt: "Contact UCode & UCreates",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact UCode & UCreates — Project Enquiries & Engineering",
+    description:
+      "Have a question about UCode or need custom web and mobile engineering from UCreates? Get in touch with our engineering team.",
+    images: [getAbsoluteUrl("/og-image.png")],
   },
 };
 

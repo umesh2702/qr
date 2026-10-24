@@ -15,9 +15,9 @@ import { QRWorkspace } from "@/components/QRWorkspace";
 import { AdBanner } from "@/components/AdBanner";
 import { UcreatesBanner } from "@/components/UcreatesBanner";
 import { ARTICLES } from "@/lib/articles";
-import { getBaseUrl } from "@/lib/site-url";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
-const baseUrl = getBaseUrl();
+const pageUrl = getAbsoluteUrl("/");
 
 export const metadata: Metadata = {
   title: {
@@ -26,35 +26,33 @@ export const metadata: Metadata = {
   description:
     "Generate permanent, high-resolution static QR codes for websites, Wi-Fi, vCard, WhatsApp, and email directly in your browser. Vector SVG and Ultra-HD 4096px PNG downloads with zero watermarks.",
   alternates: {
-    canonical: baseUrl,
+    canonical: pageUrl,
   },
   openGraph: {
     title: "UCode — Free, Privacy-First QR Code Generator",
     description:
       "Permanent static QR codes generated client-side. No signups, no expiring trials, no redirected links. Download pure SVG and Ultra-HD PNG.",
-    url: baseUrl,
+    url: pageUrl,
     siteName: "UCode by UCreates",
     type: "website",
+    images: [
+      {
+        url: getAbsoluteUrl("/og-image.png"),
+        width: 1200,
+        height: 630,
+        alt: "UCode — Free, Privacy-First QR Code Generator",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "UCode — Free, Privacy-First QR Code Generator",
+    description: "Create permanent, scannable QR codes in seconds. Vector SVG & Ultra-HD PNG downloads.",
+    images: [getAbsoluteUrl("/og-image.png")],
   },
 };
 
 export default function HomePage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "UCode",
-    applicationCategory: "DesignApplication",
-    operatingSystem: "All",
-    url: baseUrl,
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
-    description:
-      "A privacy-first, client-side static QR code generator supporting 10 standard QR types with vector SVG and 4096px print exports.",
-  };
-
   const faqItems = [
     {
       q: "Do QR codes generated on UCode ever expire?",
@@ -77,6 +75,58 @@ export default function HomePage() {
       a: "Many commercial generators deceptively route your QR code through their own redirect servers under a 14-day 'free trial'. When the trial lapses, they hold your printed codes hostage until you subscribe to a costly monthly plan. UCode bypasses third-party redirects completely.",
     },
   ];
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${pageUrl}#website`,
+        url: pageUrl,
+        name: "UCode",
+        description:
+          "Free, privacy-first QR code generator by UCreates. Permanent static codes with no expiration.",
+        publisher: {
+          "@type": "Organization",
+          "@id": `${pageUrl}#organization`,
+          name: "UCreates",
+          url: "https://ucreates.io",
+          logo: {
+            "@type": "ImageObject",
+            url: getAbsoluteUrl("/favicon.ico"),
+          },
+        },
+      },
+      {
+        "@type": "WebApplication",
+        "@id": `${pageUrl}#webapp`,
+        name: "UCode",
+        url: pageUrl,
+        applicationCategory: "DesignApplication",
+        operatingSystem: "All",
+        browserRequirements: "Requires JavaScript. Requires HTML5 Canvas.",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+        },
+        description:
+          "A privacy-first, client-side static QR code generator supporting 10 standard QR types with vector SVG and 4096px print exports.",
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${pageUrl}#faq`,
+        mainEntity: faqItems.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.a,
+          },
+        })),
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 antialiased">

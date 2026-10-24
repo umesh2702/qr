@@ -45,11 +45,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: "article",
       publishedTime: article.publishedAt,
       authors: ["UCode Technical Research Team"],
+      images: [
+        {
+          url: getAbsoluteUrl("/og-image.png"),
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: article.title,
       description: article.summary,
+      images: [getAbsoluteUrl("/og-image.png")],
     },
   };
 }
@@ -181,24 +190,59 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": postUrl,
-    },
-    headline: article.title,
-    description: article.summary,
-    url: postUrl,
-    datePublished: article.publishedAt,
-    author: {
-      "@type": "Organization",
-      name: "UCode Technical Research Team",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "UCreates",
-      url: "https://ucreates.io",
-    },
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        "@id": `${postUrl}#article`,
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": postUrl,
+        },
+        headline: article.title,
+        description: article.summary,
+        url: postUrl,
+        image: getAbsoluteUrl("/og-image.png"),
+        datePublished: article.publishedAt,
+        author: {
+          "@type": "Organization",
+          name: "UCode Technical Research Team",
+          url: getAbsoluteUrl("/"),
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "UCreates",
+          url: "https://ucreates.io",
+          logo: {
+            "@type": "ImageObject",
+            url: getAbsoluteUrl("/favicon.ico"),
+          },
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${postUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: getAbsoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Guides",
+            item: getAbsoluteUrl("/blog"),
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: article.title,
+            item: postUrl,
+          },
+        ],
+      },
+    ],
   };
 
   return (

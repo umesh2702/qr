@@ -74,11 +74,21 @@ export const metadata: Metadata = {
     siteName: "UCode by UCreates",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "UCode — Free, Privacy-First QR Code Generator by UCreates",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "UCode — Free, Privacy-First QR Code Generator",
     description: "Create permanent, scannable QR codes in seconds. Vector SVG & Ultra-HD PNG downloads.",
+    images: ["/og-image.png"],
   },
 };
 

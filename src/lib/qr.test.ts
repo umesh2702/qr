@@ -81,7 +81,7 @@ describe("QR Encoders — Correctness & RFC Compliance", () => {
     });
 
     it("auto-prepends https if protocol is missing", () => {
-      expect(encodeURL({ url: "ucode.app/generator" })).toBe("https://ucode.app/generator");
+      expect(encodeURL({ url: "ucodeqr.in/generator" })).toBe("https://ucodeqr.in/generator");
     });
 
     it("handles whitespace correctly without corrupting URL query", () => {

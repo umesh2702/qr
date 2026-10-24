@@ -18,6 +18,21 @@ export const metadata: Metadata = {
       "UCode's transparent privacy policy. Learn how all QR code encoding occurs directly inside your web browser without storing passwords, URLs, or personal data.",
     url: getAbsoluteUrl("/privacy"),
     type: "website",
+    images: [
+      {
+        url: getAbsoluteUrl("/og-image.png"),
+        width: 1200,
+        height: 630,
+        alt: "UCode Privacy Policy",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy | UCode",
+    description:
+      "UCode's transparent privacy policy. Learn how all QR code encoding occurs directly inside your web browser without storing passwords, URLs, or personal data.",
+    images: [getAbsoluteUrl("/og-image.png")],
   },
 };
 

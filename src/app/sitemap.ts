@@ -1,60 +1,50 @@
 import { MetadataRoute } from "next";
 import { ARTICLES } from "@/lib/articles";
-import { getBaseUrl } from "@/lib/site-url";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = getBaseUrl();
-  const currentDate = new Date();
-
-  // Core public indexable pages
+  // Core public indexable pages (reliable canonical endpoints)
   const staticRoutes: MetadataRoute.Sitemap = [
     {
-      url: `${baseUrl}`,
-      lastModified: currentDate,
-      changeFrequency: "daily",
+      url: getAbsoluteUrl("/"),
+      changeFrequency: "weekly",
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/blog`,
-      lastModified: currentDate,
-      changeFrequency: "daily",
+      url: getAbsoluteUrl("/blog"),
+      changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/services`,
-      lastModified: currentDate,
-      changeFrequency: "weekly",
+      url: getAbsoluteUrl("/services"),
+      changeFrequency: "monthly",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/about`,
-      lastModified: currentDate,
+      url: getAbsoluteUrl("/about"),
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/contact`,
-      lastModified: currentDate,
+      url: getAbsoluteUrl("/contact"),
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/privacy`,
-      lastModified: currentDate,
+      url: getAbsoluteUrl("/privacy"),
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: `${baseUrl}/terms`,
-      lastModified: currentDate,
+      url: getAbsoluteUrl("/terms"),
       changeFrequency: "monthly",
       priority: 0.5,
     },
   ];
 
-  // Published guide & research articles
+  // Published guide & research articles derived from the source-of-truth articles registry
   const blogRoutes: MetadataRoute.Sitemap = ARTICLES.map((article) => ({
-    url: `${baseUrl}/blog/${article.slug}`,
+    url: getAbsoluteUrl(`/blog/${article.slug}`),
     lastModified: new Date(article.publishedAt),
     changeFrequency: "monthly",
     priority: 0.8,

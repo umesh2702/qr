@@ -244,7 +244,7 @@ export function encodeEvent(data: EventFormData): string {
 
   // Deterministic UID based on title and start date for RFC 5545 compliance
   const uidSlug = title.toLowerCase().replace(/[^a-z0-9]/g, "-").slice(0, 24);
-  const uid = `${uidSlug}-${startFormatted}@ucode.app`;
+  const uid = `${uidSlug}-${startFormatted}@ucodeqr.in`;
   const dtstamp = "20261016T000000Z";
 
   const lines: string[] = [

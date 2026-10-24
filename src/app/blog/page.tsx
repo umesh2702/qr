@@ -21,6 +21,21 @@ export const metadata: Metadata = {
       "Practical, evidence-based guides on QR code generation, print sizing calculations, error correction standards, restaurant digital menus, and Wi-Fi security.",
     url: getAbsoluteUrl("/blog"),
     type: "website",
+    images: [
+      {
+        url: getAbsoluteUrl("/og-image.png"),
+        width: 1200,
+        height: 630,
+        alt: "UCode QR Engineering & Prepress Library",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "QR Code Guides, Prepress Standards & Research Library | UCode",
+    description:
+      "Practical, evidence-based guides on QR code generation, print sizing calculations, error correction standards, restaurant digital menus, and Wi-Fi security.",
+    images: [getAbsoluteUrl("/og-image.png")],
   },
 };
 

@@ -17,6 +17,21 @@ export const metadata: Metadata = {
       "Terms of service for UCode. Learn about your rights to use generated QR codes for personal and commercial applications without royalties or fees.",
     url: getAbsoluteUrl("/terms"),
     type: "website",
+    images: [
+      {
+        url: getAbsoluteUrl("/og-image.png"),
+        width: 1200,
+        height: 630,
+        alt: "UCode Terms of Use",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms of Use | UCode",
+    description:
+      "Terms of service for UCode. Learn about your rights to use generated QR codes for personal and commercial applications without royalties or fees.",
+    images: [getAbsoluteUrl("/og-image.png")],
   },
 };
 
