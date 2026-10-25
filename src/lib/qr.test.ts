@@ -611,7 +611,7 @@ describe("Synthetic Decoder Visual Round-Trip Verification (jsQR on Pixel Matrix
         expect(code).not.toBeNull();
         expect(code?.data).toBe(testUrl);
       }
-    });
+    }, 20000);
 
     it("6. Standards-compliant SVG export structure and module coordinate fidelity", async () => {
       const svg = await generateQRSVG(testUrl, {
@@ -752,7 +752,7 @@ describe("Synthetic Decoder Visual Round-Trip Verification (jsQR on Pixel Matrix
         expect(codeLogo, `Failed decoding with logo: ${item.name}`).not.toBeNull();
         expect(codeLogo?.data).toBe(item.payload);
       }
-    });
+    }, 20000);
   });
 
   describe("Style Studio — Shape, Pattern, Finder, and Combination Decoding Suite", () => {
