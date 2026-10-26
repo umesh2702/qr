@@ -15,7 +15,7 @@ import { QRWorkspace } from "@/components/QRWorkspace";
 import { AdBanner } from "@/components/AdBanner";
 import { UcreatesBanner } from "@/components/UcreatesBanner";
 import { ARTICLES } from "@/lib/articles";
-import { getAbsoluteUrl } from "@/lib/site-url";
+import { getAbsoluteUrl, UCREATES_OFFICIAL_URL } from "@/lib/site-url";
 
 const pageUrl = getAbsoluteUrl("/");
 
@@ -90,7 +90,7 @@ export default function HomePage() {
           "@type": "Organization",
           "@id": `${pageUrl}#organization`,
           name: "UCreates",
-          url: "https://ucreates.io",
+          url: UCREATES_OFFICIAL_URL,
           logo: {
             "@type": "ImageObject",
             url: getAbsoluteUrl("/favicon.ico"),

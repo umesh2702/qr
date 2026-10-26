@@ -308,8 +308,8 @@ FN:John Doe
 ORG:UCreates Digital
 TITLE:Principal Architect
 TEL;TYPE=CELL,VOICE:+15551234567
-EMAIL;TYPE=INTERNET:john@ucreates.io
-URL:https://ucreates.io
+EMAIL;TYPE=INTERNET:john@ucreates.online
+URL:https://ucreates.online
 END:VCARD
 \`\`\`
 

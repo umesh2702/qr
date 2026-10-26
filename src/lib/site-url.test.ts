@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { getBaseUrl, getAbsoluteUrl, PRODUCTION_CANONICAL_DOMAIN } from "./site-url";
+import {
+  getBaseUrl,
+  getAbsoluteUrl,
+  PRODUCTION_CANONICAL_DOMAIN,
+  UCREATES_OFFICIAL_URL,
+} from "./site-url";
 
 describe("Canonical Site URL Helper (site-url.ts)", () => {
   const originalEnv = { ...process.env };
@@ -17,6 +22,11 @@ describe("Canonical Site URL Helper (site-url.ts)", () => {
 
   it("exports PRODUCTION_CANONICAL_DOMAIN as https://ucodeqr.in", () => {
     expect(PRODUCTION_CANONICAL_DOMAIN).toBe("https://ucodeqr.in");
+  });
+
+  it("exports UCREATES_OFFICIAL_URL as https://ucreates.online", () => {
+    expect(UCREATES_OFFICIAL_URL).toBe("https://ucreates.online");
+    expect(UCREATES_OFFICIAL_URL).not.toContain("ucreates.io");
   });
 
   it("defaults to https://ucodeqr.in when no environment variables are configured", () => {

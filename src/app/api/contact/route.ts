@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const DEFAULT_RESEND_FROM = "UCode Leads <leads@ucodeqr.in>";
-export const DEFAULT_LEAD_RECIPIENT = "hello@ucreates.io";
+export const DEFAULT_LEAD_RECIPIENT = "umesh@ucreates.online";
 
 export interface ContactRequestBody {
   name?: string;
@@ -272,7 +272,7 @@ export async function POST(req: NextRequest) {
           success: false,
           notConfigured: true,
           message:
-            "The lead gateway has no active external email or webhook destination configured in this deployment. To discuss your project directly with our team, please email hello@ucreates.io.",
+            "The lead gateway has no active external email or webhook destination configured in this deployment. To discuss your project directly with our team, please email umesh@ucreates.online.",
         },
         { status: 503 }
       );
@@ -373,7 +373,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: `Enquiry could not be delivered to the notification service (${providerErrorDetails || "delivery failed"}). Please reach out directly to hello@ucreates.io.`,
+          message: `Enquiry could not be delivered to the notification service (${providerErrorDetails || "delivery failed"}). Please reach out directly to umesh@ucreates.online.`,
         },
         { status: 502 }
       );
@@ -390,7 +390,7 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     console.error("[Contact API] Unexpected error:", err);
     return NextResponse.json(
-      { success: false, message: "An unexpected server error occurred. Please try again or email us directly at hello@ucreates.io." },
+      { success: false, message: "An unexpected server error occurred. Please try again or email us directly at umesh@ucreates.online." },
       { status: 500 }
     );
   }

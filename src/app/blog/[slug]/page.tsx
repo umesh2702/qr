@@ -8,7 +8,7 @@ import { Footer } from "@/components/Footer";
 import { AdBanner } from "@/components/AdBanner";
 import { UcreatesBanner } from "@/components/UcreatesBanner";
 import { ARTICLES } from "@/lib/articles";
-import { getAbsoluteUrl } from "@/lib/site-url";
+import { getAbsoluteUrl, UCREATES_OFFICIAL_URL } from "@/lib/site-url";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -211,7 +211,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         publisher: {
           "@type": "Organization",
           name: "UCreates",
-          url: "https://ucreates.io",
+          url: UCREATES_OFFICIAL_URL,
           logo: {
             "@type": "ImageObject",
             url: getAbsoluteUrl("/favicon.ico"),

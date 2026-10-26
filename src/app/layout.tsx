@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { getBaseUrl } from "@/lib/site-url";
+import { getBaseUrl, UCREATES_OFFICIAL_URL } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     "restaurant menu QR code",
     "no expiration QR code",
   ],
-  authors: [{ name: "UCreates", url: "https://ucreates.io" }],
+  authors: [{ name: "UCreates", url: UCREATES_OFFICIAL_URL }],
   creator: "UCreates",
   publisher: "UCreates",
   formatDetection: {

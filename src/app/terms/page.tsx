@@ -105,7 +105,7 @@ export default function TermsPage() {
               </h2>
               <p>
                 For questions regarding our terms, email us at:{" "}
-                <strong className="text-neutral-900 font-medium">hello@ucreates.io</strong>.
+                <strong className="text-neutral-900 font-medium">umesh@ucreates.online</strong>.
               </p>
             </section>
           </div>

@@ -119,7 +119,7 @@ export default function PrivacyPage() {
                 If you have any questions regarding this policy or our technical architecture, please contact our engineering team directly at:
               </p>
               <p className="font-medium text-neutral-900">
-                hello@ucreates.io
+                umesh@ucreates.online
               </p>
             </section>
           </div>

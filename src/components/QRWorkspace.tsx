@@ -146,7 +146,7 @@ export const QRWorkspace: React.FC = () => {
 
   // Form states with clean initial defaults
   const [formData, setFormData] = useState<QRFormDataMap>({
-    url: { url: "https://ucreates.io" },
+    url: { url: "https://ucreates.online" },
     text: { text: "Scan and explore UCode by UCreates." },
     wifi: { ssid: "UCreates-Guest", password: "welcomeguest2026", encryption: "WPA", hidden: false },
     whatsapp: { phone: "+15551234567", message: "Hi! I scanned your QR code from UCode." },
@@ -156,12 +156,12 @@ export const QRWorkspace: React.FC = () => {
       organization: "UCreates Digital",
       title: "Lead Solutions Architect",
       phone: "+1 (555) 019-2834",
-      email: "alex@ucreates.io",
-      url: "https://ucreates.io",
+      email: "alex@ucreates.online",
+      url: "https://ucreates.online",
       address: "San Francisco, CA",
       note: "Connected via UCode digital business card",
     },
-    email: { email: "hello@ucreates.io", subject: "Project Inquiry", body: "Hi UCreates team, I'd like to discuss a project." },
+    email: { email: "umesh@ucreates.online", subject: "Project Inquiry", body: "Hi UCreates team, I'd like to discuss a project." },
     phone: { phone: "+15550192834" },
     sms: { phone: "+15550192834", message: "Hello! Interested in discussing your services." },
     geo: { latitude: "37.7749", longitude: "-122.4194", query: "San Francisco, CA" },
@@ -667,7 +667,7 @@ export const QRWorkspace: React.FC = () => {
                       </label>
                       <input
                         type="email"
-                        placeholder="alex@ucreates.io"
+                        placeholder="alex@ucreates.online"
                         value={formData.vcard.email || ""}
                         onChange={(e) =>
                           setFormData({
@@ -686,7 +686,7 @@ export const QRWorkspace: React.FC = () => {
                     </label>
                     <input
                       type="url"
-                      placeholder="https://ucreates.io"
+                      placeholder="https://ucreates.online"
                       value={formData.vcard.url || ""}
                       onChange={(e) =>
                         setFormData({

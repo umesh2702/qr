@@ -14,6 +14,7 @@
  */
 
 export const PRODUCTION_CANONICAL_DOMAIN = "https://ucodeqr.in";
+export const UCREATES_OFFICIAL_URL = "https://ucreates.online";
 
 export function getBaseUrl(): string {
   // 1. Explicit environment variable override (configured in Vercel or .env.local)

@@ -69,10 +69,10 @@ export default function ContactPage() {
                   For general questions, partnerships, or immediate support inquiries:
                 </p>
                 <a
-                  href="mailto:hello@ucreates.io"
+                  href="mailto:umesh@ucreates.online"
                   className="block text-xs font-semibold text-indigo-600 hover:underline pt-1"
                 >
-                  hello@ucreates.io
+                  umesh@ucreates.online
                 </a>
               </div>
 

@@ -69,7 +69,7 @@ describe("Contact API - Sender & Recipient Configuration", () => {
     it("falls back to default recipient if env var is empty or undefined", () => {
       expect(resolveLeadRecipient(undefined)).toBe(DEFAULT_LEAD_RECIPIENT);
       expect(resolveLeadRecipient("")).toBe(DEFAULT_LEAD_RECIPIENT);
-      expect(resolveLeadRecipient(DEFAULT_LEAD_RECIPIENT)).toBe("hello@ucreates.io");
+      expect(resolveLeadRecipient(DEFAULT_LEAD_RECIPIENT)).toBe("umesh@ucreates.online");
     });
   });
 
@@ -309,6 +309,6 @@ describe("Contact API Route Handler (POST)", () => {
     const data = await res.json();
     expect(data.success).toBe(false);
     expect(data.message).toContain("Resend HTTP 403");
-    expect(data.message).toContain("hello@ucreates.io");
+    expect(data.message).toContain("umesh@ucreates.online");
   });
 });

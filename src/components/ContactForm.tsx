@@ -92,7 +92,7 @@ export const ContactForm: React.FC = () => {
     } catch {
       setSubmitResult({
         success: false,
-        message: "Network error. Please try again or reach out to us directly at hello@ucreates.io.",
+        message: "Network error. Please try again or reach out to us directly at umesh@ucreates.online.",
       });
     } finally {
       setIsSubmitting(false);
@@ -146,10 +146,10 @@ export const ContactForm: React.FC = () => {
                 <p className="font-medium">{submitResult.message}</p>
                 {submitResult.notConfigured && (
                   <a
-                    href="mailto:hello@ucreates.io"
+                    href="mailto:umesh@ucreates.online"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:underline"
                   >
-                    <span>Click to email hello@ucreates.io directly &rarr;</span>
+                    <span>Click to email umesh@ucreates.online directly &rarr;</span>
                   </a>
                 )}
               </div>
